@@ -114,8 +114,8 @@ function samplePixels(imageData, maxSamples) {
     if (saturation < 0.15) continue
 
     // 비비드한 색상 우선: 채도가 높은 픽셀 우대
-    // 채도가 높은 픽셀은 여러 번 추가하여 가중치 부여
-    const weight = saturation > 0.4 ? 2 : 1
+    // 채도가 높은 픽셀은 여러 번 추가하여 가중치 부여 (강화된 가중치)
+    const weight = saturation > 0.6 ? 4 : saturation > 0.4 ? 3 : 1
     for (let w = 0; w < weight; w++) {
       pixels.push({ r, g, b })
     }

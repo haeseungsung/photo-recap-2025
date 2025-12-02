@@ -63,21 +63,59 @@ export function selectTop2Colors(allDominantColors) {
   const color1 = clusterRepresentatives[0]
 
   // 6. 두 번째 색상은 첫 번째와 충분히 다르면서도 빈도가 높은 색상
+  // 조건: LAB 거리 + 채도 차이 + 명도 차이를 모두 고려
   let color2 = clusterRepresentatives[1] || color1
 
   const minDifference = 20 // 최소 ΔE 차이
+  const minSaturationDiff = 0.15 // 최소 채도 차이
+  const minBrightnessDiff = 30 // 최소 명도 차이 (0-255 scale)
+
+  // color1의 채도와 명도 계산
+  const color1Saturation = calculateSaturation(color1.rgb)
+  const color1Brightness = calculateBrightness(color1.rgb)
 
   for (let i = 1; i < clusterRepresentatives.length; i++) {
     const candidate = clusterRepresentatives[i]
     const distance = calculateDeltaE(color1.lab, candidate.lab)
 
-    if (distance >= minDifference) {
+    // 후보 색상의 채도와 명도 계산
+    const candidateSaturation = calculateSaturation(candidate.rgb)
+    const candidateBrightness = calculateBrightness(candidate.rgb)
+
+    // 채도 차이와 명도 차이 계산
+    const saturationDiff = Math.abs(color1Saturation - candidateSaturation)
+    const brightnessDiff = Math.abs(color1Brightness - candidateBrightness)
+
+    // LAB 거리가 충분하고, 채도 OR 명도가 충분히 다른 색상 선택
+    if (distance >= minDifference &&
+        (saturationDiff >= minSaturationDiff || brightnessDiff >= minBrightnessDiff)) {
       color2 = candidate
       break
     }
   }
 
   return [color1.rgb, color2.rgb]
+}
+
+/**
+ * RGB 색상의 채도 계산 (HSV 기반)
+ * @param {Object} rgb - { r, g, b }
+ * @returns {number} 채도 (0-1)
+ */
+function calculateSaturation(rgb) {
+  const max = Math.max(rgb.r, rgb.g, rgb.b)
+  const min = Math.min(rgb.r, rgb.g, rgb.b)
+  const delta = max - min
+  return max === 0 ? 0 : delta / max
+}
+
+/**
+ * RGB 색상의 명도 계산
+ * @param {Object} rgb - { r, g, b }
+ * @returns {number} 명도 (0-255)
+ */
+function calculateBrightness(rgb) {
+  return (rgb.r + rgb.g + rgb.b) / 3
 }
 
 /**
