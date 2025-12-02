@@ -1,11 +1,45 @@
+import { useState, useEffect } from 'react'
 import '../styles/ResultPage.css'
+import { rgbToHex } from '../lib/color/convertColors.js'
+import { generateColorName } from '../lib/color/generateColorName.js'
 
 function ResultPage({ analysisResult }) {
-  if (!analysisResult || !analysisResult.top2) {
+  const [imageUrls, setImageUrls] = useState([])
+
+  // 클러스터링 결과 구조: { keyColors, representatives, clusterA, clusterB }
+  if (!analysisResult || !analysisResult.keyColors) {
     return <div>분석 결과가 없습니다.</div>
   }
 
-  const [color1, color2] = analysisResult.top2
+  const { keyColors, representatives } = analysisResult
+  const color1 = {
+    rgb: keyColors.colorA,
+    hex: rgbToHex(keyColors.colorA),
+    name: generateColorName(keyColors.colorA)
+  }
+  const color2 = {
+    rgb: keyColors.colorB,
+    hex: rgbToHex(keyColors.colorB),
+    name: generateColorName(keyColors.colorB)
+  }
+
+  // 대표 이미지들의 File 객체에서 URL 생성
+  useEffect(() => {
+    if (representatives && representatives.length > 0) {
+      const urls = representatives.map(rep => {
+        if (rep.file) {
+          return URL.createObjectURL(rep.file)
+        }
+        return null
+      })
+      setImageUrls(urls)
+    }
+
+    return () => {
+      // Cleanup: URL.revokeObjectURL
+      imageUrls.forEach(url => url && URL.revokeObjectURL(url))
+    }
+  }, [representatives])
 
   return (
     <div className="result-page">
@@ -43,10 +77,38 @@ function ResultPage({ analysisResult }) {
         </div>
       </div>
 
+      {/* Representative Images */}
+      {representatives && representatives.length > 0 && (
+        <div className="representative-section">
+          <h2 className="section-title">Your Defining Moments</h2>
+          <p className="section-subtitle">
+            {representatives.length} photos that best represent your year
+          </p>
+
+          <div className="image-grid">
+            {representatives.map((rep, index) => (
+              <div key={index} className="image-item">
+                {imageUrls[index] ? (
+                  <img
+                    src={imageUrls[index]}
+                    alt={`Representative ${index + 1}`}
+                    className="representative-image"
+                  />
+                ) : (
+                  <div className="image-placeholder">
+                    Loading...
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 추가 정보 */}
       <div className="result-footer">
         <p className="result-credit">
-          🤖 Generated with 2025 Color Recap
+          Generated with 2025 Color Recap
         </p>
       </div>
     </div>

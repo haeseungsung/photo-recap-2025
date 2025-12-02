@@ -28,11 +28,11 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
 
   const startColorAnalysis = async () => {
     try {
-      // processColorExtraction import
-      const { processColorExtraction } = await import('../lib/color/index.js')
+      // processClustering import (클러스터링 + 대표 이미지 선정 포함)
+      const { processClustering } = await import('../lib/clustering/processClustering.js')
 
-      // 색상 분석 실행
-      const result = await processColorExtraction(selectedFiles, (progressValue) => {
+      // 클러스터링 분석 실행 (색상 추출 + 클러스터링 + 대표 이미지 선정)
+      const result = await processClustering(selectedFiles, (progressValue) => {
         setProgress(progressValue)
       })
 

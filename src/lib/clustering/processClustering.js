@@ -76,11 +76,20 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
     })
     updateProgress()
 
-    // 6. 최종 결과 구조 생성
+    // 6. 대표 이미지에 File 객체 추가
+    const representativesWithFiles = representatives.map(rep => {
+      const imageData = imagesWithColors.find(img => img.imageId === rep.imageId)
+      return {
+        ...rep,
+        file: imageData ? imageData.file : null
+      }
+    })
+
+    // 7. 최종 결과 구조 생성
     return {
       clusterA: clusterAssignment.clusterA,
       clusterB: clusterAssignment.clusterB,
-      representatives,
+      representatives: representativesWithFiles,
       keyColors: {
         colorA: keyColorA,
         colorB: keyColorB
