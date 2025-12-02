@@ -77,16 +77,22 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
     updateProgress()
 
     // 6. 대표 이미지에 File 객체 추가
+    console.log('processClustering - representatives before adding files:', representatives)
+    console.log('processClustering - imagesWithColors:', imagesWithColors.map(img => ({ imageId: img.imageId, hasFile: !!img.file })))
+
     const representativesWithFiles = representatives.map(rep => {
       const imageData = imagesWithColors.find(img => img.imageId === rep.imageId)
+      console.log(`Finding file for ${rep.imageId}:`, imageData ? 'found' : 'not found', imageData)
       return {
         ...rep,
         file: imageData ? imageData.file : null
       }
     })
 
+    console.log('processClustering - representativesWithFiles:', representativesWithFiles)
+
     // 7. 최종 결과 구조 생성
-    return {
+    const result = {
       clusterA: clusterAssignment.clusterA,
       clusterB: clusterAssignment.clusterB,
       representatives: representativesWithFiles,
@@ -95,6 +101,9 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
         colorB: keyColorB
       }
     }
+
+    console.log('processClustering - final result:', result)
+    return result
   } catch (error) {
     console.error('Clustering process failed:', error)
     throw error

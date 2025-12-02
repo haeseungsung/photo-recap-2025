@@ -6,12 +6,16 @@ import { generateColorName } from '../lib/color/generateColorName.js'
 function ResultPage({ analysisResult }) {
   const [imageUrls, setImageUrls] = useState([])
 
+  // 디버깅: 결과 확인
+  console.log('ResultPage - analysisResult:', analysisResult)
+
   // 클러스터링 결과 구조: { keyColors, representatives, clusterA, clusterB }
   if (!analysisResult || !analysisResult.keyColors) {
     return <div>분석 결과가 없습니다.</div>
   }
 
   const { keyColors, representatives } = analysisResult
+  console.log('ResultPage - representatives:', representatives)
   const color1 = {
     rgb: keyColors.colorA,
     hex: rgbToHex(keyColors.colorA),
@@ -25,13 +29,18 @@ function ResultPage({ analysisResult }) {
 
   // 대표 이미지들의 File 객체에서 URL 생성
   useEffect(() => {
+    console.log('useEffect - representatives:', representatives)
     if (representatives && representatives.length > 0) {
       const urls = representatives.map(rep => {
+        console.log('Processing rep:', rep, 'has file:', !!rep.file)
         if (rep.file) {
-          return URL.createObjectURL(rep.file)
+          const url = URL.createObjectURL(rep.file)
+          console.log('Created URL:', url)
+          return url
         }
         return null
       })
+      console.log('All URLs:', urls)
       setImageUrls(urls)
     }
 
