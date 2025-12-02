@@ -9,9 +9,11 @@ function App() {
   const [currentPage, setCurrentPage] = useState('intro') // 'intro', 'upload', 'analyzing', 'result'
   const [selectedFiles, setSelectedFiles] = useState([])
   const [analysisResult, setAnalysisResult] = useState(null)
+  const [autoOpenUpload, setAutoOpenUpload] = useState(false)
 
   // IntroPage에서 시작 버튼 클릭
   const handleIntroStart = () => {
+    setAutoOpenUpload(true)
     setCurrentPage('upload')
   }
 
@@ -34,7 +36,7 @@ function App() {
       )}
 
       {currentPage === 'upload' && (
-        <UploadPage onStartAnalysis={handleStartAnalysis} />
+        <UploadPage onStartAnalysis={handleStartAnalysis} autoOpen={autoOpenUpload} />
       )}
 
       {currentPage === 'analyzing' && (

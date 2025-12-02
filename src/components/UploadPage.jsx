@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import '../styles/UploadPage.css'
 import {
   MIN_IMAGES,
@@ -8,12 +8,23 @@ import {
   canAnalyze
 } from '../utils/validateFiles'
 
-function UploadPage({ onStartAnalysis }) {
+function UploadPage({ onStartAnalysis, autoOpen = false }) {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [previewUrls, setPreviewUrls] = useState([])
   const [validationMessage, setValidationMessage] = useState('')
   const [validationMessageType, setValidationMessageType] = useState('info')
   const fileInputRef = useRef(null)
+
+  // IntroPage에서 넘어왔을 때 자동으로 파일 선택 다이얼로그 열기
+  useEffect(() => {
+    if (autoOpen) {
+      // 약간의 지연 후 다이얼로그 열기 (페이지 전환 완료 후)
+      const timer = setTimeout(() => {
+        fileInputRef.current?.click()
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [autoOpen])
 
   // 파일 선택 핸들러
   const handleFileSelect = (e) => {

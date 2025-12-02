@@ -34,22 +34,34 @@
   height: 100%;
   background: linear-gradient(
     135deg,
-    #667eea 0%,
-    #764ba2 25%,
-    #f093fb 50%,
-    #4facfe 75%,
-    #00f2fe 100%
+    #ff6b9d 0%,
+    #ffa07a 10%,
+    #ffd700 20%,
+    #98fb98 30%,
+    #87ceeb 40%,
+    #9370db 50%,
+    #ff69b4 60%,
+    #ffa500 70%,
+    #ffb6c1 80%,
+    #e0bbff 90%,
+    #ffcccb 100%
   );
-  background-size: 400% 400%;
-  animation: gradientShift 15s ease infinite;
+  background-size: 600% 600%;
+  animation: gradientShift 20s ease infinite;
 }
 
 @keyframes gradientShift {
   0% {
     background-position: 0% 50%;
   }
+  25% {
+    background-position: 100% 100%;
+  }
   50% {
-    background-position: 100% 50%;
+    background-position: 50% 0%;
+  }
+  75% {
+    background-position: 0% 100%;
   }
   100% {
     background-position: 0% 50%;
@@ -122,6 +134,11 @@
   font-style: italic;
   font-size: 1.2em;
   letter-spacing: 0.05em;
+}
+
+/* Font Transition Animation */
+.font-transition {
+  transition: all 0.8s ease-in-out;
 }
 
 /* CTA Button */

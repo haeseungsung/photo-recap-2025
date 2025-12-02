@@ -1,8 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import '../styles/IntroPage.css'
 
 function IntroPage({ onStart }) {
   const [isAnimating, setIsAnimating] = useState(false)
+  const [fontVariant, setFontVariant] = useState(0)
+
+  // 폰트 변경 애니메이션 (0.2초마다 변경)
+  useEffect(() => {
+    const fontInterval = setInterval(() => {
+      setFontVariant(prev => (prev + 1) % 3)
+    }, 200)
+
+    return () => clearInterval(fontInterval)
+  }, [])
 
   const handleStart = () => {
     setIsAnimating(true)
@@ -10,6 +20,16 @@ function IntroPage({ onStart }) {
     setTimeout(() => {
       onStart()
     }, 600)
+  }
+
+  // 폰트 스타일 조합 (3가지 패턴을 순환)
+  const getFontClass = (index) => {
+    const patterns = [
+      ['text-serif', 'text-pixel', 'text-cursive'],
+      ['text-cursive', 'text-serif', 'text-pixel'],
+      ['text-pixel', 'text-cursive', 'text-serif']
+    ]
+    return patterns[fontVariant][index]
   }
 
   return (
@@ -24,9 +44,9 @@ function IntroPage({ onStart }) {
       <div className="intro-content">
         {/* Typography with Mixed Fonts */}
         <h1 className="intro-title">
-          <span className="text-serif">What is the</span>
-          <span className="text-pixel">color of your</span>
-          <span className="text-cursive">2025</span>
+          <span className={`${getFontClass(0)} font-transition`}>What is the</span>
+          <span className={`${getFontClass(1)} font-transition`}>color of your</span>
+          <span className={`${getFontClass(2)} font-transition`}>2025</span>
         </h1>
 
         {/* CTA Button */}
