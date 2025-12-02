@@ -1,35 +1,31 @@
 import { useState, useRef } from 'react'
 import '../styles/UploadPage.css'
-
-const MIN_IMAGES = 20
-const MAX_IMAGES = 30
-const ALLOWED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
+import {
+  MIN_IMAGES,
+  MAX_IMAGES,
+  validateFiles,
+  validateFileCount,
+  canAnalyze
+} from '../utils/validateFiles'
 
 function UploadPage() {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [previewUrls, setPreviewUrls] = useState([])
-  const [errorMessage, setErrorMessage] = useState('')
+  const [validationMessage, setValidationMessage] = useState('')
+  const [validationMessageType, setValidationMessageType] = useState('info')
   const fileInputRef = useRef(null)
-
-  // 파일 포맷 검증 함수 (1.5)
-  const validateFileFormat = (file) => {
-    // HEIC/HEIF는 브라우저에서 image/heic, image/heif로 인식되지 않을 수 있으므로
-    // 파일 확장자도 함께 체크
-    const fileExtension = file.name.split('.').pop().toLowerCase()
-    const isValidType = ALLOWED_FORMATS.includes(file.type)
-    const isValidExtension = ['jpg', 'jpeg', 'png', 'heic', 'heif'].includes(fileExtension)
-
-    return isValidType || isValidExtension
-  }
 
   // 파일 선택 핸들러
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files)
 
-    // 파일 포맷 검증 (1.5)
-    const invalidFiles = files.filter(file => !validateFileFormat(file))
-    if (invalidFiles.length > 0) {
-      setErrorMessage(`지원하지 않는 파일 형식입니다. JPG, PNG, HEIC, HEIF 파일만 업로드 가능합니다.`)
+    // 유틸리티 함수를 사용한 검증 (2.1)
+    const validationResult = validateFiles(files, selectedFiles.length)
+
+    // 포맷 에러인 경우 즉시 반환
+    if (!validationResult.isValid && validationResult.errorType === 'FORMAT_ERROR') {
+      setValidationMessage(validationResult.message)
+      setValidationMessageType(validationResult.messageType)
       return
     }
 
@@ -50,17 +46,10 @@ function UploadPage() {
     const newPreviewUrls = finalFiles.map(file => URL.createObjectURL(file))
     setPreviewUrls(newPreviewUrls)
 
-    // 메시지 표시 로직
-    if (finalFiles.length < MIN_IMAGES) {
-      // 20장 미만 경고 (1.3)
-      setErrorMessage(`${MIN_IMAGES}장 미만은 정확한 분석이 어려워요. 최소 ${MIN_IMAGES}장을 업로드해주세요.`)
-    } else if (finalFiles.length === MAX_IMAGES) {
-      // 30장 정확히 선택 완료
-      setErrorMessage(`완료! ${MAX_IMAGES}장이 선택되었습니다. 이제 분석을 시작할 수 있어요.`)
-    } else {
-      // 20-29장 범위
-      setErrorMessage('')
-    }
+    // 개수에 따른 메시지 표시 (2.2, 2.3, 2.4)
+    const countValidation = validateFileCount(finalFiles.length)
+    setValidationMessage(countValidation.message)
+    setValidationMessageType(countValidation.messageType)
   }
 
   // 개별 이미지 삭제
@@ -74,12 +63,10 @@ function UploadPage() {
     setSelectedFiles(newFiles)
     setPreviewUrls(newPreviews)
 
-    // 20장 미만 경고 (1.3)
-    if (newFiles.length < MIN_IMAGES && newFiles.length > 0) {
-      setErrorMessage(`${MIN_IMAGES}장 미만은 정확한 분석이 어려워요. 최소 ${MIN_IMAGES}장을 업로드해주세요.`)
-    } else {
-      setErrorMessage('')
-    }
+    // 개수에 따른 메시지 업데이트 (2.2)
+    const countValidation = validateFileCount(newFiles.length)
+    setValidationMessage(countValidation.message)
+    setValidationMessageType(countValidation.messageType)
   }
 
   // 업로드 버튼 클릭 핸들러
@@ -89,14 +76,14 @@ function UploadPage() {
 
   // 분석 시작 버튼 핸들러
   const handleAnalyze = () => {
-    if (selectedFiles.length >= MIN_IMAGES && selectedFiles.length <= MAX_IMAGES) {
+    if (canAnalyze(selectedFiles.length)) {
       // TODO: 다음 단계 (분석 페이지로 이동)
       console.log('분석 시작:', selectedFiles.length, '장')
     }
   }
 
-  // 분석 버튼 disabled 조건
-  const isAnalyzeDisabled = selectedFiles.length < MIN_IMAGES
+  // 분석 버튼 disabled 조건 (2.1)
+  const isAnalyzeDisabled = !canAnalyze(selectedFiles.length)
 
   return (
     <div className="upload-page">
@@ -132,16 +119,10 @@ function UploadPage() {
         </div>
       </div>
 
-      {/* 메시지 표시 (1.3) */}
-      {errorMessage && (
-        <div className={`message ${
-          selectedFiles.length >= MIN_IMAGES && selectedFiles.length <= MAX_IMAGES
-            ? 'message-success'
-            : selectedFiles.length < MIN_IMAGES
-              ? 'message-warning'
-              : 'message-error'
-        }`}>
-          {errorMessage}
+      {/* 메시지 표시 (2.2, 2.5) */}
+      {validationMessage && (
+        <div className={`message message-${validationMessageType}`}>
+          {validationMessage}
         </div>
       )}
 

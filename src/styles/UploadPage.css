@@ -101,6 +101,12 @@
   border: 1px solid #F5C6CB;
 }
 
+.message-info {
+  background-color: #D1ECF1;
+  color: #0C5460;
+  border: 1px solid #BEE5EB;
+}
+
 /* 썸네일 그리드 (3열) */
 .thumbnail-grid {
   display: grid;
