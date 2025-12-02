@@ -53,9 +53,16 @@ function UploadPage() {
     const newPreviewUrls = files.map(file => URL.createObjectURL(file))
     setPreviewUrls([...previewUrls, ...newPreviewUrls])
 
-    // 20장 미만 경고 (1.3)
+    // 메시지 표시 로직
     if (totalFiles.length < MIN_IMAGES) {
+      // 20장 미만 경고 (1.3)
       setErrorMessage(`${MIN_IMAGES}장 미만은 정확한 분석이 어려워요. 최소 ${MIN_IMAGES}장을 업로드해주세요.`)
+    } else if (totalFiles.length === MAX_IMAGES) {
+      // 30장 정확히 선택 완료
+      setErrorMessage(`완료! ${MAX_IMAGES}장이 선택되었습니다. 이제 분석을 시작할 수 있어요.`)
+    } else {
+      // 20-29장 범위
+      setErrorMessage('')
     }
   }
 
@@ -80,6 +87,11 @@ function UploadPage() {
 
   // 업로드 버튼 클릭 핸들러
   const handleUploadClick = () => {
+    // 30장 이미 선택된 경우 다이얼로그 열지 않고 메시지 표시
+    if (selectedFiles.length >= MAX_IMAGES) {
+      setErrorMessage(`최대 ${MAX_IMAGES}장까지만 업로드 가능합니다.`)
+      return
+    }
     fileInputRef.current?.click()
   }
 
@@ -124,7 +136,11 @@ function UploadPage() {
           onClick={handleUploadClick}
           disabled={isUploadDisabled}
         >
-          {selectedFiles.length === 0 ? '사진 선택하기' : '사진 추가하기'}
+          {selectedFiles.length >= MAX_IMAGES
+            ? '최대 30장 선택 완료'
+            : selectedFiles.length === 0
+              ? '사진 선택하기'
+              : '사진 추가하기'}
         </button>
 
         <div className="upload-count">
@@ -132,9 +148,15 @@ function UploadPage() {
         </div>
       </div>
 
-      {/* 경고 메시지 표시 (1.3) */}
+      {/* 메시지 표시 (1.3) */}
       {errorMessage && (
-        <div className={`message ${selectedFiles.length < MIN_IMAGES ? 'message-warning' : 'message-error'}`}>
+        <div className={`message ${
+          selectedFiles.length >= MIN_IMAGES && selectedFiles.length <= MAX_IMAGES
+            ? 'message-success'
+            : selectedFiles.length < MIN_IMAGES
+              ? 'message-warning'
+              : 'message-error'
+        }`}>
           {errorMessage}
         </div>
       )}

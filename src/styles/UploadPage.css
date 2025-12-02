@@ -83,6 +83,12 @@
   text-align: center;
 }
 
+.message-success {
+  background-color: #D4EDDA;
+  color: #155724;
+  border: 1px solid #C3E6CB;
+}
+
 .message-warning {
   background-color: #FFF3CD;
   color: #856404;
