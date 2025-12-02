@@ -45,7 +45,7 @@
     radial-gradient(circle at 85% 85%, #e0bbff 0%, transparent 50%),
     linear-gradient(135deg, #ffcccb, #ff6b9d);
   background-size: 200% 200%;
-  animation: blobShift 25s ease-in-out infinite;
+  animation: blobShift 2.5s ease-in-out infinite;
 }
 
 @keyframes blobShift {
