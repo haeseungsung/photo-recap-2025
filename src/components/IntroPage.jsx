@@ -30,7 +30,7 @@ function IntroPage({ onStart }) {
           ...prev,
           [i]: fonts[Math.floor(Math.random() * fonts.length)]
         }))
-      }, 200 + (i * 30)) // 각 글자마다 약간씩 다른 간격
+      }, 400 + (i * 60)) // 각 글자마다 약간씩 다른 간격 (2배 느리게)
       intervals.push(interval)
     }
 
