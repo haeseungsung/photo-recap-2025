@@ -72,7 +72,7 @@ async function loadImageToCanvas(imageFile) {
 }
 
 /**
- * ImageData에서 픽셀 샘플링
+ * ImageData에서 픽셀 샘플링 (개선된 버전 - 채도 기반 필터링)
  * @param {ImageData} imageData - 이미지 데이터
  * @param {number} maxSamples - 최대 샘플 개수
  * @returns {Array} RGB 배열
@@ -94,11 +94,31 @@ function samplePixels(imageData, maxSamples) {
     // 투명도가 너무 낮은 픽셀은 제외
     if (a < 128) continue
 
-    // 너무 어둡거나 밝은 픽셀 제외 (노이즈 감소)
+    // 밝기 계산
     const brightness = (r + g + b) / 3
-    if (brightness < 10 || brightness > 245) continue
 
-    pixels.push({ r, g, b })
+    // 너무 어두운 픽셀 제외 (검정 머리, 눈동자, 옷 등)
+    if (brightness < 40) continue
+
+    // 너무 밝은 픽셀 제외 (흰 배경 등)
+    if (brightness > 240) continue
+
+    // 채도(Saturation) 계산 - HSV 방식
+    const max = Math.max(r, g, b)
+    const min = Math.min(r, g, b)
+    const delta = max - min
+    const saturation = max === 0 ? 0 : delta / max
+
+    // 무채색(회색, 검정, 흰색) 필터링
+    // 채도가 너무 낮으면 제외 (회색 계열)
+    if (saturation < 0.15) continue
+
+    // 비비드한 색상 우선: 채도가 높은 픽셀 우대
+    // 채도가 높은 픽셀은 여러 번 추가하여 가중치 부여
+    const weight = saturation > 0.4 ? 2 : 1
+    for (let w = 0; w < weight; w++) {
+      pixels.push({ r, g, b })
+    }
   }
 
   return pixels
@@ -115,14 +135,29 @@ function kMeansClustering(pixels, k, maxIterations = 20) {
   if (pixels.length === 0) return []
   if (pixels.length <= k) return pixels
 
-  // 1. 초기 중심점 설정 (랜덤 샘플링)
+  // 1. 초기 중심점 설정 (개선: 채도가 높은 픽셀 우선)
   let centroids = []
   const usedIndices = new Set()
 
-  while (centroids.length < k) {
-    const randomIndex = Math.floor(Math.random() * pixels.length)
+  // 픽셀을 채도 순으로 정렬
+  const pixelsWithSaturation = pixels.map((pixel, index) => {
+    const max = Math.max(pixel.r, pixel.g, pixel.b)
+    const min = Math.min(pixel.r, pixel.g, pixel.b)
+    const delta = max - min
+    const saturation = max === 0 ? 0 : delta / max
+    return { pixel, saturation, index }
+  })
+
+  // 채도 높은 순으로 정렬
+  pixelsWithSaturation.sort((a, b) => b.saturation - a.saturation)
+
+  // 상위 20%에서 초기 중심점 선택
+  const topPercentile = Math.max(k * 10, Math.floor(pixels.length * 0.2))
+
+  while (centroids.length < k && centroids.length < pixelsWithSaturation.length) {
+    const randomIndex = Math.floor(Math.random() * topPercentile)
     if (!usedIndices.has(randomIndex)) {
-      centroids.push({ ...pixels[randomIndex] })
+      centroids.push({ ...pixelsWithSaturation[randomIndex].pixel })
       usedIndices.add(randomIndex)
     }
   }
