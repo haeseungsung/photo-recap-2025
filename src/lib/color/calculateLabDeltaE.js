@@ -6,14 +6,12 @@
  * ΔE2000은 두 색상 간의 지각적 차이를 측정하는 가장 정확한 알고리즘입니다.
  */
 
-import type { RGB, LAB } from '../types/ColorExtractionResult'
-
 /**
  * RGB를 LAB 색 공간으로 변환
- * @param rgb - RGB 객체
- * @returns LAB 객체
+ * @param {Object} rgb - RGB 객체 { r, g, b }
+ * @returns {Object} LAB 객체 { l, a, b }
  */
-export function rgbToLab(rgb: RGB): LAB {
+export function rgbToLab(rgb) {
   // 1. RGB를 XYZ로 변환
   let r = rgb.r / 255
   let g = rgb.g / 255
@@ -49,7 +47,7 @@ export function rgbToLab(rgb: RGB): LAB {
 /**
  * XYZ to LAB 변환 헬퍼 함수
  */
-function xyzToLabHelper(t: number): number {
+function xyzToLabHelper(t) {
   const delta = 6 / 29
   return t > Math.pow(delta, 3)
     ? Math.pow(t, 1 / 3)
@@ -58,11 +56,11 @@ function xyzToLabHelper(t: number): number {
 
 /**
  * ΔE2000 계산 - 두 LAB 색상 간의 지각적 차이 계산
- * @param lab1 - 첫 번째 LAB 색상
- * @param lab2 - 두 번째 LAB 색상
- * @returns ΔE2000 값 (0에 가까울수록 유사, 100 이상이면 매우 다름)
+ * @param {Object} lab1 - 첫 번째 LAB 색상 { l, a, b }
+ * @param {Object} lab2 - 두 번째 LAB 색상 { l, a, b }
+ * @returns {number} ΔE2000 값 (0에 가까울수록 유사, 100 이상이면 매우 다름)
  */
-export function calculateDeltaE2000(lab1: LAB, lab2: LAB): number {
+export function calculateDeltaE2000(lab1, lab2) {
   // 간소화된 ΔE2000 구현
   // 실제 ΔE2000는 매우 복잡하므로, 실용적인 근사치를 사용합니다.
 
@@ -86,11 +84,11 @@ export function calculateDeltaE2000(lab1: LAB, lab2: LAB): number {
 
 /**
  * 간단한 ΔE 계산 (유클리드 거리)
- * @param lab1 - 첫 번째 LAB 색상
- * @param lab2 - 두 번째 LAB 색상
- * @returns ΔE 값
+ * @param {Object} lab1 - 첫 번째 LAB 색상 { l, a, b }
+ * @param {Object} lab2 - 두 번째 LAB 색상 { l, a, b }
+ * @returns {number} ΔE 값
  */
-export function calculateDeltaE(lab1: LAB, lab2: LAB): number {
+export function calculateDeltaE(lab1, lab2) {
   return Math.sqrt(
     Math.pow(lab1.l - lab2.l, 2) +
     Math.pow(lab1.a - lab2.a, 2) +
@@ -100,11 +98,11 @@ export function calculateDeltaE(lab1: LAB, lab2: LAB): number {
 
 /**
  * RGB 간의 LAB 거리 계산 (편의 함수)
- * @param rgb1 - 첫 번째 RGB 색상
- * @param rgb2 - 두 번째 RGB 색상
- * @returns ΔE 값
+ * @param {Object} rgb1 - 첫 번째 RGB 색상 { r, g, b }
+ * @param {Object} rgb2 - 두 번째 RGB 색상 { r, g, b }
+ * @returns {number} ΔE 값
  */
-export function calculateRgbDistance(rgb1: RGB, rgb2: RGB): number {
+export function calculateRgbDistance(rgb1, rgb2) {
   const lab1 = rgbToLab(rgb1)
   const lab2 = rgbToLab(rgb2)
   return calculateDeltaE(lab1, lab2)

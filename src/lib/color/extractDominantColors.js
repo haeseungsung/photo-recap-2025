@@ -5,19 +5,15 @@
  * 이미지를 캔버스에 로드하고 픽셀을 샘플링하여 대표 색상 6-8개를 추출합니다.
  */
 
-import type { RGB } from '../types/ColorExtractionResult'
-import { calculateRgbDistance } from './calculateLabDeltaE'
+import { calculateRgbDistance } from './calculateLabDeltaE.js'
 
 /**
  * 이미지 파일에서 dominant colors 추출
- * @param imageFile - 업로드된 이미지 파일
- * @param numColors - 추출할 색상 개수 (기본 6개)
- * @returns RGB 배열 (dominant colors)
+ * @param {File} imageFile - 업로드된 이미지 파일
+ * @param {number} numColors - 추출할 색상 개수 (기본 6개)
+ * @returns {Promise<Array>} RGB 배열 (dominant colors)
  */
-export async function extractDominantColors(
-  imageFile: File,
-  numColors: number = 6
-): Promise<RGB[]> {
+export async function extractDominantColors(imageFile, numColors = 6) {
   // 1. 이미지를 캔버스에 로드
   const imageData = await loadImageToCanvas(imageFile)
 
@@ -33,7 +29,7 @@ export async function extractDominantColors(
 /**
  * 이미지 파일을 캔버스에 로드하고 ImageData 반환
  */
-async function loadImageToCanvas(imageFile: File): Promise<ImageData> {
+async function loadImageToCanvas(imageFile) {
   return new Promise((resolve, reject) => {
     const img = new Image()
     const url = URL.createObjectURL(imageFile)
@@ -77,12 +73,12 @@ async function loadImageToCanvas(imageFile: File): Promise<ImageData> {
 
 /**
  * ImageData에서 픽셀 샘플링
- * @param imageData - 이미지 데이터
- * @param maxSamples - 최대 샘플 개수
- * @returns RGB 배열
+ * @param {ImageData} imageData - 이미지 데이터
+ * @param {number} maxSamples - 최대 샘플 개수
+ * @returns {Array} RGB 배열
  */
-function samplePixels(imageData: ImageData, maxSamples: number): RGB[] {
-  const pixels: RGB[] = []
+function samplePixels(imageData, maxSamples) {
+  const pixels = []
   const { data, width, height } = imageData
   const totalPixels = width * height
 
@@ -110,22 +106,18 @@ function samplePixels(imageData: ImageData, maxSamples: number): RGB[] {
 
 /**
  * K-means 클러스터링으로 대표 색상 추출
- * @param pixels - RGB 픽셀 배열
- * @param k - 클러스터 개수
- * @param maxIterations - 최대 반복 횟수
- * @returns RGB 배열 (centroid colors)
+ * @param {Array} pixels - RGB 픽셀 배열
+ * @param {number} k - 클러스터 개수
+ * @param {number} maxIterations - 최대 반복 횟수
+ * @returns {Array} RGB 배열 (centroid colors)
  */
-function kMeansClustering(
-  pixels: RGB[],
-  k: number,
-  maxIterations: number = 20
-): RGB[] {
+function kMeansClustering(pixels, k, maxIterations = 20) {
   if (pixels.length === 0) return []
   if (pixels.length <= k) return pixels
 
   // 1. 초기 중심점 설정 (랜덤 샘플링)
-  let centroids: RGB[] = []
-  const usedIndices = new Set<number>()
+  let centroids = []
+  const usedIndices = new Set()
 
   while (centroids.length < k) {
     const randomIndex = Math.floor(Math.random() * pixels.length)
@@ -138,7 +130,7 @@ function kMeansClustering(
   // 2. K-means 반복
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     // 각 픽셀을 가장 가까운 centroid에 할당
-    const clusters: RGB[][] = Array.from({ length: k }, () => [])
+    const clusters = Array.from({ length: k }, () => [])
 
     for (const pixel of pixels) {
       let minDistance = Infinity
@@ -156,7 +148,7 @@ function kMeansClustering(
     }
 
     // 새로운 centroid 계산
-    const newCentroids: RGB[] = []
+    const newCentroids = []
     let hasChanged = false
 
     for (let i = 0; i < k; i++) {

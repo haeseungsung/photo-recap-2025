@@ -3,18 +3,16 @@
  * 2025 Recap 프로젝트 - 색상 변환 유틸리티
  */
 
-import type { RGB } from '../types/ColorExtractionResult'
-
 /**
  * RGB 값을 HEX 문자열로 변환
- * @param rgb - RGB 객체 { r, g, b }
- * @returns HEX 코드 문자열 (예: "#FF6B6B")
+ * @param {Object} rgb - RGB 객체 { r, g, b }
+ * @returns {string} HEX 코드 문자열 (예: "#FF6B6B")
  */
-export function hexFromRgb(rgb: RGB): string {
+export function hexFromRgb(rgb) {
   const { r, g, b } = rgb
 
   // RGB 값을 0-255 범위로 클램핑
-  const clamp = (value: number) => Math.max(0, Math.min(255, Math.round(value)))
+  const clamp = (value) => Math.max(0, Math.min(255, Math.round(value)))
 
   const rHex = clamp(r).toString(16).padStart(2, '0')
   const gHex = clamp(g).toString(16).padStart(2, '0')
@@ -25,10 +23,10 @@ export function hexFromRgb(rgb: RGB): string {
 
 /**
  * HEX 문자열을 RGB 객체로 변환
- * @param hex - HEX 코드 문자열 (예: "#FF6B6B" 또는 "FF6B6B")
- * @returns RGB 객체
+ * @param {string} hex - HEX 코드 문자열 (예: "#FF6B6B" 또는 "FF6B6B")
+ * @returns {Object} RGB 객체 { r, g, b }
  */
-export function rgbFromHex(hex: string): RGB {
+export function rgbFromHex(hex) {
   // # 제거
   const cleanHex = hex.replace('#', '')
 

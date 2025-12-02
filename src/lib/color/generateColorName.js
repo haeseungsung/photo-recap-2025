@@ -6,8 +6,7 @@
  * 예: "Soft Coral", "Deep Walnut", "Morning Fog"
  */
 
-import type { RGB, LAB } from '../types/ColorExtractionResult'
-import { rgbToLab } from './calculateLabDeltaE'
+import { rgbToLab } from './calculateLabDeltaE.js'
 
 // 색상 형용사 (밝기/채도 기반)
 const ADJECTIVES = {
@@ -36,10 +35,10 @@ const COLOR_NAMES = {
 
 /**
  * RGB 값으로부터 자동 컬러 이름 생성
- * @param rgb - RGB 색상
- * @returns Pantone 스타일 컬러 이름
+ * @param {Object} rgb - RGB 색상 { r, g, b }
+ * @returns {string} Pantone 스타일 컬러 이름
  */
-export function generateColorName(rgb: RGB): string {
+export function generateColorName(rgb) {
   const lab = rgbToLab(rgb)
 
   // 1. 밝기 기반 형용사 선택
@@ -55,9 +54,9 @@ export function generateColorName(rgb: RGB): string {
 /**
  * LAB 밝기(L) 값에 따른 형용사 선택
  */
-function selectAdjective(lab: LAB): string {
+function selectAdjective(lab) {
   const { l } = lab
-  let adjectiveGroup: string[]
+  let adjectiveGroup
 
   if (l >= 85) {
     adjectiveGroup = ADJECTIVES.veryLight
@@ -78,7 +77,7 @@ function selectAdjective(lab: LAB): string {
 /**
  * RGB 값에 따른 색상 이름 선택
  */
-function selectColorName(rgb: RGB, lab: LAB): string {
+function selectColorName(rgb, lab) {
   const { r, g, b } = rgb
   const { l, a, b: bLab } = lab
 
@@ -142,6 +141,6 @@ function selectColorName(rgb: RGB, lab: LAB): string {
 /**
  * 배열에서 랜덤 요소 선택
  */
-function randomFrom<T>(array: T[]): T {
+function randomFrom(array) {
   return array[Math.floor(Math.random() * array.length)]
 }

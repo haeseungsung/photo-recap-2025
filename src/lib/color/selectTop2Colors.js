@@ -6,23 +6,16 @@
  * LAB ΔE 거리를 고려하여 가장 대표적인 2개 색상을 선정합니다.
  */
 
-import type { RGB, LAB } from '../types/ColorExtractionResult'
-import { rgbToLab, calculateDeltaE } from './calculateLabDeltaE'
-
-export type ColorWithWeight = {
-  rgb: RGB
-  lab: LAB
-  weight: number // 빈도/중요도
-}
+import { rgbToLab, calculateDeltaE } from './calculateLabDeltaE.js'
 
 /**
  * 여러 이미지의 dominant colors에서 Top 2 색상 선정
- * @param allDominantColors - 모든 이미지에서 추출된 dominant colors (RGB 배열의 배열)
- * @returns Top 2 색상 [RGB, RGB]
+ * @param {Array<Array>} allDominantColors - 모든 이미지에서 추출된 dominant colors (RGB 배열의 배열)
+ * @returns {Array} Top 2 색상 [RGB, RGB]
  */
-export function selectTop2Colors(allDominantColors: RGB[][]): [RGB, RGB] {
+export function selectTop2Colors(allDominantColors) {
   // 1. 모든 색상을 하나의 배열로 합치고 LAB로 변환
-  const allColors: ColorWithWeight[] = []
+  const allColors = []
 
   for (const colors of allDominantColors) {
     for (const rgb of colors) {
@@ -50,7 +43,7 @@ export function selectTop2Colors(allDominantColors: RGB[][]): [RGB, RGB] {
   const clusterRepresentatives = clustered.map(cluster => {
     const totalWeight = cluster.reduce((sum, c) => sum + c.weight, 0)
 
-    const avgRgb: RGB = {
+    const avgRgb = {
       r: Math.round(cluster.reduce((sum, c) => sum + c.rgb.r * c.weight, 0) / totalWeight),
       g: Math.round(cluster.reduce((sum, c) => sum + c.rgb.g * c.weight, 0) / totalWeight),
       b: Math.round(cluster.reduce((sum, c) => sum + c.rgb.b * c.weight, 0) / totalWeight),
@@ -89,15 +82,12 @@ export function selectTop2Colors(allDominantColors: RGB[][]): [RGB, RGB] {
 
 /**
  * 유사한 색상끼리 클러스터링
- * @param colors - 색상 배열
- * @param threshold - LAB 거리 임계값
- * @returns 클러스터별로 묶인 색상 배열
+ * @param {Array} colors - 색상 배열
+ * @param {number} threshold - LAB 거리 임계값
+ * @returns {Array<Array>} 클러스터별로 묶인 색상 배열
  */
-function clusterSimilarColors(
-  colors: ColorWithWeight[],
-  threshold: number
-): ColorWithWeight[][] {
-  const clusters: ColorWithWeight[][] = []
+function clusterSimilarColors(colors, threshold) {
+  const clusters = []
 
   for (const color of colors) {
     let assigned = false
@@ -125,10 +115,10 @@ function clusterSimilarColors(
 
 /**
  * 단일 이미지에서 가장 dominant한 색상 1개 선정
- * @param dominantColors - 이미지에서 추출된 dominant colors (6-8개)
- * @returns 대표 색상 1개
+ * @param {Array} dominantColors - 이미지에서 추출된 dominant colors (6-8개)
+ * @returns {Object} 대표 색상 1개 { r, g, b }
  */
-export function selectSingleDominantColor(dominantColors: RGB[]): RGB {
+export function selectSingleDominantColor(dominantColors) {
   if (dominantColors.length === 0) {
     return { r: 128, g: 128, b: 128 }
   }
