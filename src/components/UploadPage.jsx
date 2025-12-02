@@ -36,28 +36,25 @@ function UploadPage() {
     // 기존 파일과 합쳐서 총 개수 계산
     const totalFiles = [...selectedFiles, ...files]
 
-    // 30장 초과 제한 (1.4)
+    // 30장 초과 시 처음 30장만 선택 (1.4)
+    let finalFiles = totalFiles
     if (totalFiles.length > MAX_IMAGES) {
-      const remainingSlots = MAX_IMAGES - selectedFiles.length
-      setErrorMessage(`최대 ${MAX_IMAGES}장까지만 업로드 가능합니다. (${remainingSlots}장 추가 가능)`)
-      return
+      finalFiles = totalFiles.slice(0, MAX_IMAGES)
+      alert(`최대 ${MAX_IMAGES}장까지만 선택 가능합니다.\n처음 ${MAX_IMAGES}장만 선택되었습니다.`)
     }
 
-    // 에러 메시지 초기화
-    setErrorMessage('')
-
     // 파일 목록 업데이트
-    setSelectedFiles(totalFiles)
+    setSelectedFiles(finalFiles)
 
     // 미리보기 URL 생성
-    const newPreviewUrls = files.map(file => URL.createObjectURL(file))
-    setPreviewUrls([...previewUrls, ...newPreviewUrls])
+    const newPreviewUrls = finalFiles.map(file => URL.createObjectURL(file))
+    setPreviewUrls(newPreviewUrls)
 
     // 메시지 표시 로직
-    if (totalFiles.length < MIN_IMAGES) {
+    if (finalFiles.length < MIN_IMAGES) {
       // 20장 미만 경고 (1.3)
       setErrorMessage(`${MIN_IMAGES}장 미만은 정확한 분석이 어려워요. 최소 ${MIN_IMAGES}장을 업로드해주세요.`)
-    } else if (totalFiles.length === MAX_IMAGES) {
+    } else if (finalFiles.length === MAX_IMAGES) {
       // 30장 정확히 선택 완료
       setErrorMessage(`완료! ${MAX_IMAGES}장이 선택되었습니다. 이제 분석을 시작할 수 있어요.`)
     } else {
@@ -87,11 +84,6 @@ function UploadPage() {
 
   // 업로드 버튼 클릭 핸들러
   const handleUploadClick = () => {
-    // 30장 이미 선택된 경우 다이얼로그 열지 않고 메시지 표시
-    if (selectedFiles.length >= MAX_IMAGES) {
-      setErrorMessage(`최대 ${MAX_IMAGES}장까지만 업로드 가능합니다.`)
-      return
-    }
     fileInputRef.current?.click()
   }
 
@@ -102,9 +94,6 @@ function UploadPage() {
       console.log('분석 시작:', selectedFiles.length, '장')
     }
   }
-
-  // 업로드 버튼 disabled 조건 (1.6)
-  const isUploadDisabled = selectedFiles.length >= MAX_IMAGES
 
   // 분석 버튼 disabled 조건
   const isAnalyzeDisabled = selectedFiles.length < MIN_IMAGES
@@ -134,13 +123,8 @@ function UploadPage() {
         <button
           className="upload-button"
           onClick={handleUploadClick}
-          disabled={isUploadDisabled}
         >
-          {selectedFiles.length >= MAX_IMAGES
-            ? '최대 30장 선택 완료'
-            : selectedFiles.length === 0
-              ? '사진 선택하기'
-              : '사진 추가하기'}
+          {selectedFiles.length === 0 ? '사진 선택하기' : '사진 추가하기'}
         </button>
 
         <div className="upload-count">
