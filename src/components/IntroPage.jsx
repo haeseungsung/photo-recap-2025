@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import '../styles/IntroPage.css'
 
 function IntroPage({ onStart }) {
   const [isAnimating, setIsAnimating] = useState(false)
   const [fontVariant, setFontVariant] = useState(0)
+  const fileInputRef = useRef(null)
 
   // 폰트 변경 애니메이션 (0.2초마다 변경)
   useEffect(() => {
@@ -15,11 +16,19 @@ function IntroPage({ onStart }) {
   }, [])
 
   const handleStart = () => {
-    setIsAnimating(true)
-    // Wait for fade-out animation to complete
-    setTimeout(() => {
-      onStart()
-    }, 600)
+    // 바로 파일 선택 다이얼로그 열기
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length > 0) {
+      setIsAnimating(true)
+      // Wait for fade-out animation to complete
+      setTimeout(() => {
+        onStart(files)
+      }, 600)
+    }
   }
 
   // 폰트 스타일 조합 (3가지 패턴을 순환)
@@ -39,6 +48,16 @@ function IntroPage({ onStart }) {
         <div className="gradient-layer"></div>
         <div className="noise-layer"></div>
       </div>
+
+      {/* Hidden File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
 
       {/* Main Content */}
       <div className="intro-content">

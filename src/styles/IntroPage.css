@@ -25,46 +25,59 @@
   z-index: 0;
 }
 
-/* Gradient Layer */
+/* Gradient Layer - 물방울처럼 번지는 방사형 애니메이션 */
 .gradient-layer {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    135deg,
-    #ff6b9d 0%,
-    #ffa07a 10%,
-    #ffd700 20%,
-    #98fb98 30%,
-    #87ceeb 40%,
-    #9370db 50%,
-    #ff69b4 60%,
-    #ffa500 70%,
-    #ffb6c1 80%,
-    #e0bbff 90%,
-    #ffcccb 100%
-  );
-  background-size: 600% 600%;
-  animation: gradientShift 20s ease infinite;
+  background:
+    radial-gradient(circle at 20% 30%, #ff6b9d 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, #ffa07a 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, #ffd700 0%, transparent 50%),
+    radial-gradient(circle at 90% 20%, #98fb98 0%, transparent 50%),
+    radial-gradient(circle at 10% 80%, #87ceeb 0%, transparent 50%),
+    radial-gradient(circle at 60% 10%, #9370db 0%, transparent 50%),
+    radial-gradient(circle at 30% 90%, #ff69b4 0%, transparent 50%),
+    radial-gradient(circle at 70% 40%, #ffa500 0%, transparent 50%),
+    radial-gradient(circle at 40% 60%, #ffb6c1 0%, transparent 50%),
+    radial-gradient(circle at 85% 85%, #e0bbff 0%, transparent 50%),
+    linear-gradient(135deg, #ffcccb, #ff6b9d);
+  background-size: 200% 200%;
+  animation: blobShift 25s ease-in-out infinite;
 }
 
-@keyframes gradientShift {
+@keyframes blobShift {
   0% {
-    background-position: 0% 50%;
+    background-position:
+      20% 30%, 80% 70%, 50% 50%, 90% 20%, 10% 80%,
+      60% 10%, 30% 90%, 70% 40%, 40% 60%, 85% 85%, 0% 0%;
   }
-  25% {
-    background-position: 100% 100%;
+  20% {
+    background-position:
+      35% 45%, 65% 55%, 80% 20%, 15% 85%, 90% 15%,
+      25% 75%, 70% 30%, 45% 90%, 10% 40%, 60% 60%, 50% 50%;
   }
-  50% {
-    background-position: 50% 0%;
+  40% {
+    background-position:
+      70% 60%, 30% 40%, 90% 80%, 20% 10%, 80% 90%,
+      40% 20%, 60% 70%, 15% 35%, 85% 15%, 50% 85%, 100% 100%;
   }
-  75% {
-    background-position: 0% 100%;
+  60% {
+    background-position:
+      50% 85%, 85% 25%, 15% 65%, 75% 45%, 25% 55%,
+      90% 75%, 10% 15%, 55% 95%, 70% 30%, 30% 70%, 50% 0%;
+  }
+  80% {
+    background-position:
+      15% 25%, 90% 80%, 40% 90%, 85% 15%, 30% 60%,
+      65% 35%, 20% 70%, 80% 50%, 55% 20%, 45% 95%, 0% 100%;
   }
   100% {
-    background-position: 0% 50%;
+    background-position:
+      20% 30%, 80% 70%, 50% 50%, 90% 20%, 10% 80%,
+      60% 10%, 30% 90%, 70% 40%, 40% 60%, 85% 85%, 0% 0%;
   }
 }
 

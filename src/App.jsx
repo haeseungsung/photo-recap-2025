@@ -11,10 +11,16 @@ function App() {
   const [analysisResult, setAnalysisResult] = useState(null)
   const [autoOpenUpload, setAutoOpenUpload] = useState(false)
 
-  // IntroPage에서 시작 버튼 클릭
-  const handleIntroStart = () => {
-    setAutoOpenUpload(true)
-    setCurrentPage('upload')
+  // IntroPage에서 파일 선택 완료
+  const handleIntroStart = (files) => {
+    if (files && files.length > 0) {
+      setSelectedFiles(files)
+      setCurrentPage('analyzing')
+    } else {
+      // 파일이 없으면 업로드 페이지로
+      setAutoOpenUpload(true)
+      setCurrentPage('upload')
+    }
   }
 
   // 분석 시작
