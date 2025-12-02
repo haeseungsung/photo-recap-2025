@@ -27,14 +27,23 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
   }, [])
 
   const startColorAnalysis = async () => {
+    console.log('=== 분석 시작 ===')
+    console.log('선택된 파일들:', selectedFiles)
+
     try {
       // processClustering import (클러스터링 + 대표 이미지 선정 포함)
+      console.log('processClustering import 시작...')
       const { processClustering } = await import('../lib/clustering/processClustering.js')
+      console.log('processClustering import 완료')
 
       // 클러스터링 분석 실행 (색상 추출 + 클러스터링 + 대표 이미지 선정)
+      console.log('클러스터링 분석 실행 중...')
       const result = await processClustering(selectedFiles, (progressValue) => {
+        console.log('진행률:', progressValue)
         setProgress(progressValue)
       })
+
+      console.log('분석 완료! 결과:', result)
 
       // 최소 3초 로딩 보장
       const minLoadingTime = 3000
@@ -42,13 +51,19 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
       const remaining = Math.max(0, minLoadingTime - elapsed)
 
       setTimeout(() => {
+        console.log('결과 페이지로 이동')
         onAnalysisComplete(result)
       }, remaining)
 
     } catch (error) {
-      console.error('색상 분석 실패:', error)
+      console.error('=== 색상 분석 실패 ===')
+      console.error('에러 타입:', error.name)
+      console.error('에러 메시지:', error.message)
+      console.error('에러 스택:', error.stack)
+      console.error('전체 에러 객체:', error)
+
       // 에러 처리 - 사용자에게 알림
-      alert('색상 분석 중 오류가 발생했습니다. 다시 시도해주세요.')
+      alert(`색상 분석 중 오류가 발생했습니다.\n\n에러: ${error.message}\n\n다시 시도해주세요.`)
     }
   }
 
