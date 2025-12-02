@@ -9,18 +9,10 @@ function App() {
   const [currentPage, setCurrentPage] = useState('intro') // 'intro', 'upload', 'analyzing', 'result'
   const [selectedFiles, setSelectedFiles] = useState([])
   const [analysisResult, setAnalysisResult] = useState(null)
-  const [autoOpenUpload, setAutoOpenUpload] = useState(false)
 
-  // IntroPage에서 파일 선택 완료
-  const handleIntroStart = (files) => {
-    if (files && files.length > 0) {
-      setSelectedFiles(files)
-      setCurrentPage('analyzing')
-    } else {
-      // 파일이 없으면 업로드 페이지로
-      setAutoOpenUpload(true)
-      setCurrentPage('upload')
-    }
+  // IntroPage에서 UploadPage로 이동
+  const handleIntroStart = () => {
+    setCurrentPage('upload')
   }
 
   // 분석 시작
@@ -42,7 +34,7 @@ function App() {
       )}
 
       {currentPage === 'upload' && (
-        <UploadPage onStartAnalysis={handleStartAnalysis} autoOpen={autoOpenUpload} />
+        <UploadPage onStartAnalysis={handleStartAnalysis} />
       )}
 
       {currentPage === 'analyzing' && (
