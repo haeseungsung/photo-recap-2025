@@ -8,7 +8,7 @@ import {
   canAnalyze
 } from '../utils/validateFiles'
 
-function UploadPage() {
+function UploadPage({ onStartAnalysis }) {
   const [selectedFiles, setSelectedFiles] = useState([])
   const [previewUrls, setPreviewUrls] = useState([])
   const [validationMessage, setValidationMessage] = useState('')
@@ -77,8 +77,8 @@ function UploadPage() {
   // 분석 시작 버튼 핸들러
   const handleAnalyze = () => {
     if (canAnalyze(selectedFiles.length)) {
-      // TODO: 다음 단계 (분석 페이지로 이동)
-      console.log('분석 시작:', selectedFiles.length, '장')
+      // 분석 페이지로 이동
+      onStartAnalysis(selectedFiles)
     }
   }
 

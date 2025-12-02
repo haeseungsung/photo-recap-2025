@@ -1,0 +1,126 @@
+.result-page {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* 헤더 */
+.result-header {
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+.result-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.2;
+}
+
+.result-subtitle {
+  font-size: 16px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+/* Color Cards - Pantone 스타일 */
+.color-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.color-card {
+  background: white;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.color-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.color-swatch {
+  width: 100%;
+  height: 200px;
+}
+
+.color-info {
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.color-name {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+  letter-spacing: 0.5px;
+}
+
+.color-hex {
+  font-size: 18px;
+  color: var(--color-text-muted);
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+/* Footer */
+.result-footer {
+  text-align: center;
+  padding: var(--spacing-xl) 0;
+}
+
+.result-credit {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  .result-page {
+    padding: var(--spacing-xl) var(--spacing-md);
+  }
+
+  .result-title {
+    font-size: 28px;
+  }
+
+  .result-subtitle {
+    font-size: 14px;
+  }
+
+  .color-swatch {
+    height: 180px;
+  }
+
+  .color-name {
+    font-size: 22px;
+  }
+
+  .color-hex {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 375px) {
+  .result-title {
+    font-size: 24px;
+  }
+
+  .color-swatch {
+    height: 160px;
+  }
+
+  .color-name {
+    font-size: 20px;
+  }
+}
