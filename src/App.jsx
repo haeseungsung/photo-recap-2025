@@ -1,13 +1,19 @@
 import { useState } from 'react'
+import IntroPage from './components/IntroPage'
 import UploadPage from './components/UploadPage'
 import AnalysisLoadingPage from './components/AnalysisLoadingPage'
 import ResultPage from './components/ResultPage'
 import './styles/App.css'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('upload') // 'upload', 'analyzing', 'result'
+  const [currentPage, setCurrentPage] = useState('intro') // 'intro', 'upload', 'analyzing', 'result'
   const [selectedFiles, setSelectedFiles] = useState([])
   const [analysisResult, setAnalysisResult] = useState(null)
+
+  // IntroPage에서 시작 버튼 클릭
+  const handleIntroStart = () => {
+    setCurrentPage('upload')
+  }
 
   // 분석 시작
   const handleStartAnalysis = (files) => {
@@ -23,6 +29,10 @@ function App() {
 
   return (
     <div className="App">
+      {currentPage === 'intro' && (
+        <IntroPage onStart={handleIntroStart} />
+      )}
+
       {currentPage === 'upload' && (
         <UploadPage onStartAnalysis={handleStartAnalysis} />
       )}
