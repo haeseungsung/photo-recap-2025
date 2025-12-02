@@ -20,15 +20,13 @@
   accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
   onChange={handleFileSelect}
   style={{ display: 'none' }}
-  capture="environment"
 />
 ```
 
 **핵심 속성:**
 - `type="file"` - 파일 선택 input
 - `multiple` - 다중 파일 선택 가능
-- `accept` - 허용할 파일 타입 지정
-- `capture="environment"` - 모바일에서 카메라/갤러리 직접 접근
+- `accept` - 허용할 파일 타입 지정 (갤러리 접근)
 
 **UI 버튼:**
 ```jsx
@@ -63,20 +61,20 @@
 #### 구현 내용
 ```jsx
 <input
-  capture="environment"
   accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
 />
 ```
 
 **핵심 포인트:**
-1. **capture 속성**: 모바일에서 카메라/갤러리 바로 접근
-   - `environment` - 후면 카메라 우선
-   - iOS Safari, Android Chrome 모두 지원
-
-2. **accept 속성**:
+1. **accept 속성**: 모바일에서 갤러리 접근
    - MIME type + 확장자 모두 명시
    - 일부 브라우저는 MIME만, 일부는 확장자만 인식
    - 최대 호환성을 위해 둘 다 포함
+   - iOS Safari, Android Chrome에서 자동으로 갤러리 열림
+
+2. **capture 속성 사용 안 함**:
+   - `capture="environment"` 사용 시 카메라 직접 실행됨
+   - 갤러리에서 선택하려면 capture 속성 제거 필요
 
 3. **모바일 최적화**:
    - viewport 설정으로 확대/축소 방지 (index.html)

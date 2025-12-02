@@ -115,8 +115,6 @@ function UploadPage() {
         accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif"
         onChange={handleFileSelect}
         style={{ display: 'none' }}
-        // iOS/Android 갤러리 접근 (1.2)
-        capture="environment"
       />
 
       {/* 업로드 버튼 영역 */}
