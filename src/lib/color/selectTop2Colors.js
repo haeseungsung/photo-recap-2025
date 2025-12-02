@@ -56,86 +56,31 @@ export function selectTop2Colors(allDominantColors) {
     }
   })
 
-  // 4. 각 클러스터에 채도와 명도 정보 추가
-  const colorsWithMetrics = clusterRepresentatives.map(color => ({
-    ...color,
-    saturation: calculateSaturation(color.rgb),
-    brightness: calculateBrightness(color.rgb)
-  }))
+  // 4. 가중치 순으로 정렬 (많이 등장한 색상 우선)
+  clusterRepresentatives.sort((a, b) => b.weight - a.weight)
 
-  // 5. 명도가 높은 색상들만 필터링 (명도 > 80)
-  const brightColors = colorsWithMetrics.filter(c => c.brightness > 80)
+  // 5. 첫 번째 색상: 가장 빈도가 높은 색상
+  const color1 = clusterRepresentatives[0]
 
-  // 명도가 높은 색상이 2개 미만이면 전체에서 선택
-  const candidateColors = brightColors.length >= 2 ? brightColors : colorsWithMetrics
+  // 6. 두 번째 색상: color1과 LAB ΔE 거리가 가장 먼 색상 찾기
+  let color2 = clusterRepresentatives[1] || color1
+  let maxDeltaE = 0
 
-  // 6. 명도 순으로 정렬 (명도가 높은 순)
-  candidateColors.sort((a, b) => b.brightness - a.brightness)
+  for (let i = 1; i < clusterRepresentatives.length; i++) {
+    const candidate = clusterRepresentatives[i]
+    const deltaE = calculateDeltaE(color1.lab, candidate.lab)
 
-  // 7. 첫 번째 색상: 명도가 가장 높은 색상
-  const color1 = candidateColors[0]
-
-  // 8. 두 번째 색상: color1과 채도/명도 거리가 가장 먼 색상 찾기
-  let color2 = candidateColors[1] || color1
-  let maxDistance = 0
-
-  for (let i = 1; i < candidateColors.length; i++) {
-    const candidate = candidateColors[i]
-
-    // 채도 차이와 명도 차이의 합으로 거리 계산
-    const saturationDiff = Math.abs(color1.saturation - candidate.saturation)
-    const brightnessDiff = Math.abs(color1.brightness - candidate.brightness)
-
-    // 정규화된 거리 (0-1 사이 값으로)
-    const normalizedSaturationDiff = saturationDiff // 이미 0-1 사이
-    const normalizedBrightnessDiff = brightnessDiff / 255 // 0-255 → 0-1
-
-    // 유클리드 거리
-    const distance = Math.sqrt(
-      normalizedSaturationDiff ** 2 +
-      normalizedBrightnessDiff ** 2
-    )
-
-    if (distance > maxDistance) {
-      maxDistance = distance
+    if (deltaE > maxDeltaE) {
+      maxDeltaE = deltaE
       color2 = candidate
     }
   }
 
-  console.log('Selected Color 1:', {
-    rgb: color1.rgb,
-    saturation: color1.saturation,
-    brightness: color1.brightness
-  })
-  console.log('Selected Color 2:', {
-    rgb: color2.rgb,
-    saturation: color2.saturation,
-    brightness: color2.brightness
-  })
-  console.log('Distance:', maxDistance)
+  console.log('Selected Color 1:', color1.rgb, 'Weight:', color1.weight)
+  console.log('Selected Color 2:', color2.rgb, 'Weight:', color2.weight)
+  console.log('LAB ΔE Distance:', maxDeltaE)
 
   return [color1.rgb, color2.rgb]
-}
-
-/**
- * RGB 색상의 채도 계산 (HSV 기반)
- * @param {Object} rgb - { r, g, b }
- * @returns {number} 채도 (0-1)
- */
-function calculateSaturation(rgb) {
-  const max = Math.max(rgb.r, rgb.g, rgb.b)
-  const min = Math.min(rgb.r, rgb.g, rgb.b)
-  const delta = max - min
-  return max === 0 ? 0 : delta / max
-}
-
-/**
- * RGB 색상의 명도 계산
- * @param {Object} rgb - { r, g, b }
- * @returns {number} 명도 (0-255)
- */
-function calculateBrightness(rgb) {
-  return (rgb.r + rgb.g + rgb.b) / 3
 }
 
 /**
