@@ -3,16 +3,34 @@ import '../styles/IntroPage.css'
 
 function IntroPage({ onStart }) {
   const [isAnimating, setIsAnimating] = useState(false)
-  const [fontVariant, setFontVariant] = useState(0)
+  const [charFonts, setCharFonts] = useState({})
   const fileInputRef = useRef(null)
 
-  // 폰트 변경 애니메이션 (0.2초마다 변경)
-  useEffect(() => {
-    const fontInterval = setInterval(() => {
-      setFontVariant(prev => (prev + 1) % 3)
-    }, 200)
+  const text = "What is the color of your 2025"
+  const fonts = ['text-serif', 'text-pixel', 'text-cursive']
 
-    return () => clearInterval(fontInterval)
+  // 각 알파벳마다 랜덤하게 폰트 변경 애니메이션
+  useEffect(() => {
+    // 초기 랜덤 폰트 설정
+    const initialFonts = {}
+    for (let i = 0; i < text.length; i++) {
+      initialFonts[i] = fonts[Math.floor(Math.random() * fonts.length)]
+    }
+    setCharFonts(initialFonts)
+
+    // 각 글자마다 다른 타이밍으로 폰트 변경
+    const intervals = []
+    for (let i = 0; i < text.length; i++) {
+      const interval = setInterval(() => {
+        setCharFonts(prev => ({
+          ...prev,
+          [i]: fonts[Math.floor(Math.random() * fonts.length)]
+        }))
+      }, 200 + (i * 30)) // 각 글자마다 약간씩 다른 간격
+      intervals.push(interval)
+    }
+
+    return () => intervals.forEach(clearInterval)
   }, [])
 
   const handleStart = () => {
@@ -31,21 +49,12 @@ function IntroPage({ onStart }) {
     }
   }
 
-  // 폰트 스타일 조합 (3가지 패턴을 순환)
-  const getFontClass = (index) => {
-    const patterns = [
-      ['text-serif', 'text-pixel', 'text-cursive'],
-      ['text-cursive', 'text-serif', 'text-pixel'],
-      ['text-pixel', 'text-cursive', 'text-serif']
-    ]
-    return patterns[fontVariant][index]
-  }
-
   return (
     <div className={`intro-page ${isAnimating ? 'fade-out' : ''}`}>
       {/* Gradient Background with Noise Texture */}
       <div className="intro-background">
         <div className="gradient-layer"></div>
+        <div className="watercolor-texture"></div>
         <div className="noise-layer"></div>
       </div>
 
@@ -61,11 +70,20 @@ function IntroPage({ onStart }) {
 
       {/* Main Content */}
       <div className="intro-content">
-        {/* Typography with Mixed Fonts */}
+        {/* Typography with Mixed Fonts - 각 글자마다 다른 폰트 */}
         <h1 className="intro-title">
-          <span className={`${getFontClass(0)} font-transition`}>What is the</span>
-          <span className={`${getFontClass(1)} font-transition`}>color of your</span>
-          <span className={`${getFontClass(2)} font-transition`}>2025</span>
+          {text.split('').map((char, index) => (
+            <span
+              key={index}
+              className={`${charFonts[index] || fonts[0]} char-animation`}
+              style={{
+                display: char === ' ' ? 'inline' : 'inline-block',
+                marginRight: char === ' ' ? '0.3em' : '0'
+              }}
+            >
+              {char === ' ' ? '\u00A0' : char}
+            </span>
+          ))}
         </h1>
 
         {/* CTA Button */}
