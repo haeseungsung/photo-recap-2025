@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import '../styles/ResultPage.css'
-import { rgbToHex } from '../lib/color/convertColors.js'
+import { hexFromRgb } from '../lib/color/hexFromRgb.js'
 import { generateColorName } from '../lib/color/generateColorName.js'
 
 function ResultPage({ analysisResult }) {
@@ -18,12 +18,12 @@ function ResultPage({ analysisResult }) {
   console.log('ResultPage - representatives:', representatives)
   const color1 = {
     rgb: keyColors.colorA,
-    hex: rgbToHex(keyColors.colorA),
+    hex: hexFromRgb(keyColors.colorA),
     name: generateColorName(keyColors.colorA)
   }
   const color2 = {
     rgb: keyColors.colorB,
-    hex: rgbToHex(keyColors.colorB),
+    hex: hexFromRgb(keyColors.colorB),
     name: generateColorName(keyColors.colorB)
   }
 
