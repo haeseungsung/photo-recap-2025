@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import '../styles/IntroPage.css'
 
 function IntroPage({ onStart }) {
   const [isAnimating, setIsAnimating] = useState(false)
   const [charFonts, setCharFonts] = useState({})
+  const [fallingEmojis, setFallingEmojis] = useState([])
+  const emojiIdCounter = useRef(0)
 
   const lines = [
     "What is the",
@@ -11,6 +13,7 @@ function IntroPage({ onStart }) {
     "2025"
   ]
   const fonts = ['text-serif', 'text-pixel', 'text-cursive']
+  const emojiList = ['✨', '💫', '⭐', '🌟', '💖', '💕', '🌈', '🎨', '🎵', '🌸', '🌺', '🦋', '🎀', '🌙', '☀️']
 
   // 각 알파벳마다 랜덤하게 폰트 변경 애니메이션
   useEffect(() => {
@@ -37,6 +40,44 @@ function IntroPage({ onStart }) {
     return () => intervals.forEach(clearInterval)
   }, [])
 
+  // 이모지 계속 생성 및 쌓기
+  useEffect(() => {
+    const createEmoji = () => {
+      const emoji = emojiList[Math.floor(Math.random() * emojiList.length)]
+      const left = Math.random() * 100 // 0-100%
+      const duration = 7 + Math.random() * 2.5 // 7-9.5초
+      const id = emojiIdCounter.current++
+
+      setFallingEmojis(prev => [...prev, {
+        id,
+        emoji,
+        left,
+        duration
+      }])
+
+      // 애니메이션 완료 후 이모지 제거 (메모리 관리)
+      // 최대 50개까지만 유지
+      setTimeout(() => {
+        setFallingEmojis(prev => {
+          if (prev.length > 50) {
+            return prev.slice(-50)
+          }
+          return prev
+        })
+      }, duration * 1000)
+    }
+
+    // 초기 이모지 생성
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => createEmoji(), i * 300)
+    }
+
+    // 계속해서 새로운 이모지 생성 (0.8초마다)
+    const interval = setInterval(createEmoji, 800)
+
+    return () => clearInterval(interval)
+  }, [])
+
   const handleStart = () => {
     setIsAnimating(true)
     // Wait for fade-out animation to complete
@@ -55,6 +96,20 @@ function IntroPage({ onStart }) {
         <div className="sparkle-layer">
           {[...Array(20)].map((_, i) => (
             <div key={i} className="sparkle"></div>
+          ))}
+        </div>
+        <div className="emoji-layer">
+          {fallingEmojis.map((item) => (
+            <div
+              key={item.id}
+              className="falling-emoji-dynamic"
+              style={{
+                left: `${item.left}%`,
+                animationDuration: `${item.duration}s`
+              }}
+            >
+              {item.emoji}
+            </div>
           ))}
         </div>
       </div>
