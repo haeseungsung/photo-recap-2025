@@ -6,6 +6,7 @@ import { generateColorName } from '../lib/color/generateColorName.js'
 function ResultPage({ analysisResult }) {
   const [imageUrls, setImageUrls] = useState([])
   const [isTransitioned, setIsTransitioned] = useState(false)
+  const [sparkles, setSparkles] = useState([])
 
   // 디버깅: 결과 확인
   console.log('ResultPage - analysisResult:', analysisResult)
@@ -51,6 +52,42 @@ function ResultPage({ analysisResult }) {
     }
   }, [representatives])
 
+  // 초기 팡파레 별 애니메이션
+  useEffect(() => {
+    const createSparkles = () => {
+      const newSparkles = []
+      const centerX = window.innerWidth / 2
+      const centerY = window.innerHeight / 3
+
+      // 50개의 별 생성
+      for (let i = 0; i < 50; i++) {
+        const angle = (Math.PI * 2 * i) / 50
+        const distance = 150 + Math.random() * 200
+        const tx = Math.cos(angle) * distance
+        const ty = Math.sin(angle) * distance
+        const duration = 0.8 + Math.random() * 0.4
+
+        newSparkles.push({
+          id: i,
+          x: centerX,
+          y: centerY,
+          tx,
+          ty,
+          duration
+        })
+      }
+
+      setSparkles(newSparkles)
+
+      // 애니메이션 완료 후 별 제거
+      setTimeout(() => {
+        setSparkles([])
+      }, 1500)
+    }
+
+    createSparkles()
+  }, [])
+
   // 2초 후 레이아웃 전환 애니메이션
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,6 +99,25 @@ function ResultPage({ analysisResult }) {
 
   return (
     <div className="result-page">
+      {/* Celebration Sparkles */}
+      {sparkles.length > 0 && (
+        <div className="celebration-sparkles">
+          {sparkles.map((sparkle) => (
+            <div
+              key={sparkle.id}
+              className="celebration-sparkle"
+              style={{
+                left: sparkle.x,
+                top: sparkle.y,
+                '--tx': `${sparkle.tx}px`,
+                '--ty': `${sparkle.ty}px`,
+                animationDuration: `${sparkle.duration}s`
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       <header className="result-header">
         <h1 className="result-title">Your 2025 Color Palette</h1>
         <p className="result-subtitle">

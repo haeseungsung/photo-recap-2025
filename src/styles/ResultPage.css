@@ -1,10 +1,12 @@
 .result-page {
+  position: relative;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--spacing-2xl) var(--spacing-lg);
   min-height: 100vh;
   background: var(--color-bg);
+  overflow: hidden;
 }
 
 /* 헤더 */
@@ -158,6 +160,42 @@
   font-size: 14px;
 }
 
+/* Celebration Sparkles - 팡파레 별 애니메이션 */
+.celebration-sparkles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.celebration-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 215, 0, 0.8) 50%, transparent 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.9);
+  animation: celebration-burst ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes celebration-burst {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(1);
+    opacity: 0;
+  }
+}
+
 /* Footer */
 .result-footer {
   text-align: center;
@@ -195,7 +233,7 @@
   .result-content.transitioned .color-cards {
     grid-template-columns: repeat(2, 1fr);
     width: 100%;
-    transform: scale(0.8);
+    transform: scale(0.5);
   }
 
   .color-swatch {
