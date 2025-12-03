@@ -29,9 +29,9 @@
 
 /* Color Cards - Pantone 스타일 */
 .color-cards {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xl);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md);
   margin-bottom: var(--spacing-2xl);
 }
 
