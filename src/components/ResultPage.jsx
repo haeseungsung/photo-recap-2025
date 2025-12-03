@@ -7,6 +7,7 @@ function ResultPage({ analysisResult }) {
   const [imageUrls, setImageUrls] = useState([])
   const [isTransitioned, setIsTransitioned] = useState(false)
   const [sparkles, setSparkles] = useState([])
+  const [selectedColorIndex, setSelectedColorIndex] = useState(null)
 
   // 디버깅: 결과 확인
   console.log('ResultPage - analysisResult:', analysisResult)
@@ -97,6 +98,42 @@ function ResultPage({ analysisResult }) {
     return () => clearTimeout(timer)
   }, [])
 
+  // 컬러칩 클릭 핸들러
+  const handleColorClick = (index) => {
+    if (isTransitioned) {
+      setSelectedColorIndex(index)
+    }
+  }
+
+  // 모달 닫기
+  const handleCloseModal = () => {
+    setSelectedColorIndex(null)
+  }
+
+  // 다시하기
+  const handleRestart = () => {
+    window.location.reload()
+  }
+
+  // 공유하기
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '2025 Color Recap',
+          text: 'Check out my 2025 color palette!',
+          url: window.location.href
+        })
+      } catch (error) {
+        console.log('Share failed:', error)
+      }
+    } else {
+      // 폴백: 클립보드 복사
+      navigator.clipboard.writeText(window.location.href)
+      alert('링크가 복사되었습니다!')
+    }
+  }
+
   return (
     <div className="result-page">
       {/* Celebration Sparkles */}
@@ -127,31 +164,62 @@ function ResultPage({ analysisResult }) {
 
       {/* Main Content Container - 전환 애니메이션 적용 */}
       <div className={`result-content ${isTransitioned ? 'transitioned' : ''}`}>
-        {/* Top 2 Key Colors - Pantone 스타일 */}
-        <div className="color-cards">
-          {/* Color 1 */}
-          <div className="color-card">
+        {/* 컬러칩과 액션 버튼 컨테이너 */}
+        <div className="left-column">
+          {/* Top 2 Key Colors - Pantone 스타일 */}
+          <div className="color-cards">
+            {/* Color 1 */}
             <div
-              className="color-swatch"
-              style={{ backgroundColor: color1.hex }}
-            />
-            <div className="color-info">
-              <h2 className="color-name">{color1.name}</h2>
-              <p className="color-hex">{color1.hex}</p>
+              className="color-card"
+              onClick={() => handleColorClick(0)}
+              style={{ cursor: isTransitioned ? 'pointer' : 'default' }}
+            >
+              <div
+                className="color-swatch"
+                style={{ backgroundColor: color1.hex }}
+              />
+              <div className="color-info">
+                <h2 className="color-name">{color1.name}</h2>
+                <p className="color-hex">{color1.hex}</p>
+              </div>
+            </div>
+
+            {/* Color 2 */}
+            <div
+              className="color-card"
+              onClick={() => handleColorClick(1)}
+              style={{ cursor: isTransitioned ? 'pointer' : 'default' }}
+            >
+              <div
+                className="color-swatch"
+                style={{ backgroundColor: color2.hex }}
+              />
+              <div className="color-info">
+                <h2 className="color-name">{color2.name}</h2>
+                <p className="color-hex">{color2.hex}</p>
+              </div>
             </div>
           </div>
 
-          {/* Color 2 */}
-          <div className="color-card">
-            <div
-              className="color-swatch"
-              style={{ backgroundColor: color2.hex }}
-            />
-            <div className="color-info">
-              <h2 className="color-name">{color2.name}</h2>
-              <p className="color-hex">{color2.hex}</p>
+          {/* 액션 버튼들 (전환 후에만 표시) */}
+          {isTransitioned && (
+            <div className="action-buttons">
+              <button
+                className="action-button restart-button"
+                onClick={handleRestart}
+                aria-label="다시하기"
+              >
+                ↻
+              </button>
+              <button
+                className="action-button share-button"
+                onClick={handleShare}
+                aria-label="공유하기"
+              >
+                ⎋
+              </button>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Representative Images */}
@@ -184,6 +252,36 @@ function ResultPage({ analysisResult }) {
           Generated with 2025 Color Recap
         </p>
       </div>
+
+      {/* 컬러 상세 모달 */}
+      {selectedColorIndex !== null && (
+        <div className="color-modal-overlay" onClick={handleCloseModal}>
+          <div className="color-modal-content" onClick={(e) => e.stopPropagation()}>
+            {/* 닫기 버튼 */}
+            <button className="modal-close-button" onClick={handleCloseModal}>
+              ×
+            </button>
+
+            {/* 선택된 컬러 카드 */}
+            <div className="color-card modal-color-card">
+              <div
+                className="color-swatch"
+                style={{
+                  backgroundColor: selectedColorIndex === 0 ? color1.hex : color2.hex
+                }}
+              />
+              <div className="color-info">
+                <h2 className="color-name">
+                  {selectedColorIndex === 0 ? color1.name : color2.name}
+                </h2>
+                <p className="color-hex">
+                  {selectedColorIndex === 0 ? color1.hex : color2.hex}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
