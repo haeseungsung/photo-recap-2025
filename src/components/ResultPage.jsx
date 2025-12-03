@@ -59,13 +59,13 @@ function ResultPage({ analysisResult }) {
       const centerX = window.innerWidth / 2
       const centerY = window.innerHeight / 3
 
-      // 50개의 별 생성
-      for (let i = 0; i < 50; i++) {
-        const angle = (Math.PI * 2 * i) / 50
-        const distance = 150 + Math.random() * 200
+      // 100개의 별 생성 (더 많이)
+      for (let i = 0; i < 100; i++) {
+        const angle = (Math.PI * 2 * i) / 100
+        const distance = 150 + Math.random() * 250
         const tx = Math.cos(angle) * distance
         const ty = Math.sin(angle) * distance
-        const duration = 0.8 + Math.random() * 0.4
+        const duration = 0.6 + Math.random() * 0.5
 
         newSparkles.push({
           id: i,
