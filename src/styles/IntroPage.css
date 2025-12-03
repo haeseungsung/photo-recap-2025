@@ -4,6 +4,7 @@
   position: relative;
   width: 100vw;
   height: 100vh;
+  background-color: #ffffff;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -25,93 +26,6 @@
   z-index: 0;
 }
 
-/* Gradient Layer - 물방울처럼 번지는 방사형 애니메이션 */
-.gradient-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(circle at 20% 30%, #ff6b9d 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, #ffa07a 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, #ffd700 0%, transparent 50%),
-    radial-gradient(circle at 90% 20%, #98fb98 0%, transparent 50%),
-    radial-gradient(circle at 10% 80%, #87ceeb 0%, transparent 50%),
-    radial-gradient(circle at 60% 10%, #9370db 0%, transparent 50%),
-    radial-gradient(circle at 30% 90%, #ff69b4 0%, transparent 50%),
-    radial-gradient(circle at 70% 40%, #ffa500 0%, transparent 50%),
-    radial-gradient(circle at 40% 60%, #ffb6c1 0%, transparent 50%),
-    radial-gradient(circle at 85% 85%, #e0bbff 0%, transparent 50%),
-    linear-gradient(135deg, #ffcccb, #ff6b9d);
-  background-size: 200% 200%;
-  animation: blobShift 7.5s ease-in-out infinite;
-}
-
-@keyframes blobShift {
-  0% {
-    background-position:
-      20% 30%, 80% 70%, 50% 50%, 90% 20%, 10% 80%,
-      60% 10%, 30% 90%, 70% 40%, 40% 60%, 85% 85%, 0% 0%;
-  }
-  20% {
-    background-position:
-      35% 45%, 65% 55%, 80% 20%, 15% 85%, 90% 15%,
-      25% 75%, 70% 30%, 45% 90%, 10% 40%, 60% 60%, 50% 50%;
-  }
-  40% {
-    background-position:
-      70% 60%, 30% 40%, 90% 80%, 20% 10%, 80% 90%,
-      40% 20%, 60% 70%, 15% 35%, 85% 15%, 50% 85%, 100% 100%;
-  }
-  60% {
-    background-position:
-      50% 85%, 85% 25%, 15% 65%, 75% 45%, 25% 55%,
-      90% 75%, 10% 15%, 55% 95%, 70% 30%, 30% 70%, 50% 0%;
-  }
-  80% {
-    background-position:
-      15% 25%, 90% 80%, 40% 90%, 85% 15%, 30% 60%,
-      65% 35%, 20% 70%, 80% 50%, 55% 20%, 45% 95%, 0% 100%;
-  }
-  100% {
-    background-position:
-      20% 30%, 80% 70%, 50% 50%, 90% 20%, 10% 80%,
-      60% 10%, 30% 90%, 70% 40%, 40% 60%, 85% 85%, 0% 0%;
-  }
-}
-
-/* Watercolor Texture Layer - 수채화 물감 번짐 효과 */
-.watercolor-texture {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    radial-gradient(ellipse at 15% 25%, rgba(255, 255, 255, 0.2) 0%, transparent 50%),
-    radial-gradient(ellipse at 85% 75%, rgba(255, 255, 255, 0.18) 0%, transparent 55%),
-    radial-gradient(ellipse at 45% 60%, rgba(255, 255, 255, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 70% 30%, rgba(255, 255, 255, 0.12) 0%, transparent 45%),
-    radial-gradient(ellipse at 30% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-    radial-gradient(ellipse at 60% 10%, rgba(255, 255, 255, 0.15) 0%, transparent 40%);
-  opacity: 0.7;
-  mix-blend-mode: overlay;
-  filter: blur(60px);
-}
-
-/* Noise Texture Layer - 강화된 그레인 효과 */
-.noise-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noiseFilter"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noiseFilter)"/></svg>');
-  opacity: 0.3;
-  mix-blend-mode: overlay;
-}
-
 /* Sparkle Stars Layer - 반짝이는 별 */
 .sparkle-layer {
   position: absolute;
@@ -128,9 +42,9 @@
   position: absolute;
   width: 4px;
   height: 4px;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(200, 200, 200, 0.6) 50%, transparent 100%);
+  background: radial-gradient(circle, rgba(150, 150, 150, 0.9) 0%, rgba(100, 100, 100, 0.6) 50%, transparent 100%);
   border-radius: 50%;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 6px rgba(150, 150, 150, 0.8);
   animation: sparkle-fall linear infinite;
   opacity: 0;
 }
@@ -209,7 +123,7 @@
     opacity: 0.9;
   }
   100% {
-    transform: translateY(calc(100vh - 30px)) rotate(360deg);
+    transform: translateY(calc(100vh + 100px)) rotate(360deg);
     opacity: 0.7;
   }
 }
@@ -240,8 +154,7 @@
   font-size: 4.2rem;
   font-family: 'Grandiflora One', serif;
   font-weight: 600;
-  color: #ffffff;
-  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+  color: #000000;
   text-align: center;
   max-width: 100%;
   line-height: 1.6;
@@ -298,21 +211,20 @@
   font-size: 0.95rem;
   font-weight: 500;
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: #000000;
+  border: 2px solid #000000;
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
   letter-spacing: 0.05em;
   animation: buttonPulse 2s ease-in-out infinite;
 }
 
 .intro-cta:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: #333333;
+  border-color: #333333;
   transform: scale(1.05);
-  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
 }
 
 .intro-cta:active {
@@ -321,10 +233,10 @@
 
 @keyframes buttonPulse {
   0%, 100% {
-    box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   }
   50% {
-    box-shadow: 0 8px 40px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
   }
 }
 
