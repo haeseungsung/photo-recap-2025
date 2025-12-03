@@ -52,6 +52,11 @@ function IntroPage({ onStart }) {
         <div className="gradient-layer"></div>
         <div className="watercolor-texture"></div>
         <div className="noise-layer"></div>
+        <div className="sparkle-layer">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className="sparkle"></div>
+          ))}
+        </div>
       </div>
 
       {/* Main Content */}
