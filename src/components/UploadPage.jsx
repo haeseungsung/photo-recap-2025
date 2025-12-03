@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import '../styles/UploadPage.css'
 import {
   MIN_IMAGES,
@@ -13,7 +13,45 @@ function UploadPage({ onStartAnalysis }) {
   const [previewUrls, setPreviewUrls] = useState([])
   const [validationMessage, setValidationMessage] = useState('')
   const [validationMessageType, setValidationMessageType] = useState('info')
+  const [fallingEmojis, setFallingEmojis] = useState([])
   const fileInputRef = useRef(null)
+  const emojiIdCounter = useRef(0)
+
+  const emojiList = ['✨', '💫', '⭐', '🌟', '💖', '💕', '🌈', '🎨', '🎵', '🌸', '🌺', '🦋', '🎀', '🌙', '☀️']
+
+  // 이모지 계속 생성 및 쌓기 (IntroPage와 동일)
+  useEffect(() => {
+    const createEmoji = () => {
+      const emoji = emojiList[Math.floor(Math.random() * emojiList.length)]
+      const left = Math.random() * 100
+      const duration = 7 + Math.random() * 2.5
+      const id = emojiIdCounter.current++
+
+      setFallingEmojis(prev => [...prev, {
+        id,
+        emoji,
+        left,
+        duration
+      }])
+
+      setTimeout(() => {
+        setFallingEmojis(prev => {
+          if (prev.length > 50) {
+            return prev.slice(-50)
+          }
+          return prev
+        })
+      }, duration * 1000)
+    }
+
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => createEmoji(), i * 300)
+    }
+
+    const interval = setInterval(createEmoji, 800)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // 파일 선택 핸들러
   const handleFileSelect = (e) => {
@@ -87,13 +125,41 @@ function UploadPage({ onStartAnalysis }) {
 
   return (
     <div className="upload-page">
-      {/* 헤더 */}
-      <header className="upload-header">
-        <h1 className="upload-title">Upload your 2025 moments</h1>
-        <p className="upload-subtitle">
-          {MIN_IMAGES}~{MAX_IMAGES}장의 사진을 선택해주세요
-        </p>
-      </header>
+      {/* Background Layers - IntroPage와 동일 */}
+      <div className="upload-background">
+        <div className="gradient-layer"></div>
+        <div className="watercolor-texture"></div>
+        <div className="noise-layer"></div>
+        <div className="sparkle-layer">
+          {[...Array(20)].map((_, i) => (
+            <div key={i} className="sparkle"></div>
+          ))}
+        </div>
+        <div className="emoji-layer">
+          {fallingEmojis.map((item) => (
+            <div
+              key={item.id}
+              className="falling-emoji-dynamic"
+              style={{
+                left: `${item.left}%`,
+                animationDuration: `${item.duration}s`
+              }}
+            >
+              {item.emoji}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="upload-content">
+        {/* 헤더 */}
+        <header className="upload-header">
+          <h1 className="upload-title">Upload your 2025 moments</h1>
+          <p className="upload-subtitle">
+            {MIN_IMAGES}~{MAX_IMAGES}장의 사진을 선택해주세요
+          </p>
+        </header>
 
       {/* 파일 업로드 Input (hidden) - 1.1 */}
       <input
@@ -144,18 +210,19 @@ function UploadPage({ onStartAnalysis }) {
         </div>
       )}
 
-      {/* 분석 시작 버튼 */}
-      {selectedFiles.length > 0 && (
-        <div className="analyze-section">
-          <button
-            className="analyze-button"
-            onClick={handleAnalyze}
-            disabled={isAnalyzeDisabled}
-          >
-            분석 시작하기
-          </button>
-        </div>
-      )}
+        {/* 분석 시작 버튼 */}
+        {selectedFiles.length > 0 && (
+          <div className="analyze-section">
+            <button
+              className="analyze-button"
+              onClick={handleAnalyze}
+              disabled={isAnalyzeDisabled}
+            >
+              분석 시작하기
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
