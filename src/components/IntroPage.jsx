@@ -87,7 +87,7 @@ function IntroPage({ onStart }) {
         <h1 className="intro-title">
           당신의<br />
           2025년은<br />
-          무슨 색인가요?
+          어떤 색?
         </h1>
 
         {/* CTA Button */}
