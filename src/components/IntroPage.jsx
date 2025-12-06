@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import AuraBackground from './AuraBackground'
+import SnowGlobeSpec from './SnowGlobeSpec'
 import '../styles/IntroPage.css'
 
 function IntroPage({ onStart }) {
@@ -15,26 +15,16 @@ function IntroPage({ onStart }) {
 
   return (
     <div className={`intro-page ${isAnimating ? 'fade-out' : ''}`}>
-      {/* The pervasive background layer */}
-      <AuraBackground />
+      {/* 3D Snow Globe */}
+      <div className="intro-background">
+        <SnowGlobeSpec />
+      </div>
 
-      {/* Main Content */}
-      <div className="intro-content">
-        <h1 className="intro-title">
-          What's the<br />
-          color of your<br />
-          2025?
-        </h1>
-
-        {/* CTA Button */}
-        <button className="intro-cta" onClick={handleStart}>
-          <span className="intro-cta-glow"></span>
-          <span className="intro-cta-text">Find Out</span>
+      {/* CTA Button overlay */}
+      <div className="intro-cta-overlay">
+        <button className="intro-cta-modern" onClick={handleStart}>
+          <span className="intro-cta-text">시작하기</span>
         </button>
-
-        <p className="intro-footer">
-          fire place. spark. wine. relax®
-        </p>
       </div>
     </div>
   )
