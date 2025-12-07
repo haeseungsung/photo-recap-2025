@@ -26,11 +26,11 @@ const glassFragmentShader = `
   varying vec3 vViewPosition;
   varying vec2 vUv;
 
-  // Thin-film interference colors
+  // Thin-film interference colors (더 미묘하게)
   vec3 thinFilmColor(float cosTheta) {
-    float phase = cosTheta * 10.0 + time * 0.5;
-    vec3 color1 = vec3(0.7, 0.9, 1.0); // Light blue
-    vec3 color2 = vec3(1.0, 0.8, 0.9); // Pink
+    float phase = cosTheta * 8.0 + time * 0.3;
+    vec3 color1 = vec3(0.8, 0.95, 1.0); // Very light blue
+    vec3 color2 = vec3(1.0, 0.9, 0.95); // Very light pink
     return mix(color1, color2, sin(phase) * 0.5 + 0.5);
   }
 
@@ -38,22 +38,22 @@ const glassFragmentShader = `
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(vViewPosition);
 
-    // Fresnel effect
-    float fresnel = pow(1.0 - abs(dot(viewDir, normal)), 3.0);
+    // Fresnel effect (얇은 유리 - 더 약하게)
+    float fresnel = pow(1.0 - abs(dot(viewDir, normal)), 4.0);
 
     // Specular from directional light ONLY (no reflections)
     vec3 reflectDir = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64.0);
 
-    // Thin-film interference
+    // Thin-film interference (매우 미묘하게)
     vec3 filmColor = thinFilmColor(dot(viewDir, normal));
 
-    // Final color: transparent base + thin-film + specular highlight
+    // Final color: transparent base + very subtle thin-film + specular highlight
     vec3 baseColor = vec3(1.0, 1.0, 1.0);
-    vec3 finalColor = mix(baseColor, filmColor, fresnel * 0.3) + vec3(spec * 0.5);
+    vec3 finalColor = mix(baseColor, filmColor, fresnel * 0.1) + vec3(spec * 0.3);
 
-    // High transmission (very transparent)
-    float alpha = 0.15 + fresnel * 0.1;
+    // Very high transmission (얇은 유리 - 거의 투명)
+    float alpha = 0.08 + fresnel * 0.05;
 
     gl_FragColor = vec4(finalColor, alpha);
   }
@@ -83,7 +83,7 @@ function SnowGlobeSpec() {
 
     // Scene setup
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x87CEEB) // Sky blue
+    scene.background = new THREE.Color(0x0d1117) // Midnight navy (거의 검정색에 가까운 남색)
     sceneRef.current = scene
 
     // Camera
@@ -93,7 +93,7 @@ function SnowGlobeSpec() {
       0.1,
       100
     )
-    camera.position.set(-2.5, 0.5, 3.5)
+    camera.position.set(-1.5, 0.3, 2.0) // Closer for smaller globe
     cameraRef.current = camera
 
     // Renderer with optimizations
@@ -121,8 +121,8 @@ function SnowGlobeSpec() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
     scene.add(ambientLight)
 
-    // Glass globe with custom shader (NO reflections)
-    const globeGeometry = new THREE.IcosahedronGeometry(1, 64)
+    // Glass globe with custom shader (NO reflections) - 절반 크기 (0.5)
+    const globeGeometry = new THREE.IcosahedronGeometry(0.5, 64)
     const glassMaterial = new THREE.ShaderMaterial({
       vertexShader: glassVertexShader,
       fragmentShader: glassFragmentShader,
@@ -137,81 +137,86 @@ function SnowGlobeSpec() {
     scene.add(globe)
     globeRef.current = globe
 
-    // Base (wooden platform)
-    const baseGeometry = new THREE.CylinderGeometry(1.1, 1.2, 0.2, 32)
+    // Base (wooden platform) - 절반 크기
+    const baseGeometry = new THREE.CylinderGeometry(0.55, 0.6, 0.1, 32)
     const baseMaterial = new THREE.MeshStandardMaterial({
       color: 0x8B4513,
       roughness: 0.8,
       metalness: 0.1
     })
     const base = new THREE.Mesh(baseGeometry, baseMaterial)
-    base.position.y = -1.1
+    base.position.y = -0.55
     base.castShadow = true
     base.receiveShadow = true
     scene.add(base)
 
-    // Simple cabin (box + pyramid roof)
+    // Simple cabin (box + pyramid roof) - 절반 크기
     const cabinGroup = new THREE.Group()
 
     // Cabin base
-    const cabinGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.4)
+    const cabinGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.2)
     const cabinMaterial = new THREE.MeshStandardMaterial({
       color: 0xD2691E,
       roughness: 0.7
     })
     const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial)
-    cabin.position.y = -0.75
+    cabin.position.y = -0.375
     cabin.castShadow = true
     cabin.receiveShadow = true
     cabinGroup.add(cabin)
 
     // Roof
-    const roofGeometry = new THREE.ConeGeometry(0.35, 0.25, 4)
+    const roofGeometry = new THREE.ConeGeometry(0.175, 0.125, 4)
     const roofMaterial = new THREE.MeshStandardMaterial({
       color: 0xDC143C,
       roughness: 0.6
     })
     const roof = new THREE.Mesh(roofGeometry, roofMaterial)
-    roof.position.y = -0.475
+    roof.position.y = -0.2375
     roof.rotation.y = Math.PI / 4
     roof.castShadow = true
     cabinGroup.add(roof)
 
     // Window lights (emissive)
-    const windowGeometry = new THREE.BoxGeometry(0.08, 0.08, 0.02)
+    const windowGeometry = new THREE.BoxGeometry(0.04, 0.04, 0.01)
     const windowMaterial = new THREE.MeshStandardMaterial({
       color: 0xFFFF00,
       emissive: 0xFFAA00,
       emissiveIntensity: 2
     })
     const window1 = new THREE.Mesh(windowGeometry, windowMaterial)
-    window1.position.set(0.1, -0.7, 0.21)
+    window1.position.set(0.05, -0.35, 0.105)
     cabinGroup.add(window1)
 
     const window2 = new THREE.Mesh(windowGeometry, windowMaterial)
-    window2.position.set(-0.1, -0.7, 0.21)
+    window2.position.set(-0.05, -0.35, 0.105)
     cabinGroup.add(window2)
 
     scene.add(cabinGroup)
 
-    // Snow ground
-    const snowGroundGeometry = new THREE.CylinderGeometry(0.9, 0.9, 0.05, 32)
+    // Snow ground - 더 두껍게 (눈이 쌓인 느낌)
+    const snowGroundGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.08, 32)
     const snowGroundMaterial = new THREE.MeshStandardMaterial({
       color: 0xFFFFFF,
+      emissive: 0xFFFFFF,
+      emissiveIntensity: 0.1,
       roughness: 0.9,
-      metalness: 0.1
+      metalness: 0.05
     })
     const snowGround = new THREE.Mesh(snowGroundGeometry, snowGroundMaterial)
-    snowGround.position.y = -0.9
+    snowGround.position.y = -0.425
     snowGround.receiveShadow = true
     scene.add(snowGround)
 
-    // Initialize 2000 snow particles (InstancedMesh for performance)
-    const particleCount = 2000
-    const particleGeometry = new THREE.SphereGeometry(0.01, 6, 6)
+    // Initialize 4000 snow particles (더 많이, 더 작게) - 반짝이는 하얀 눈
+    const particleCount = 4000
+    const particleGeometry = new THREE.SphereGeometry(0.003, 6, 6) // 더 작게
     const particleMaterial = new THREE.MeshStandardMaterial({
       color: 0xFFFFFF,
-      roughness: 0.5
+      emissive: 0xFFFFFF, // 반짝이는 효과
+      emissiveIntensity: 0.5,
+      roughness: 0.15, // 더 반짝이게
+      metalness: 0.15
     })
     const snowMesh = new THREE.InstancedMesh(particleGeometry, particleMaterial, particleCount)
 
@@ -219,10 +224,10 @@ function SnowGlobeSpec() {
     const particles = []
 
     for (let i = 0; i < particleCount; i++) {
-      // Random position inside sphere
+      // Random position inside sphere - 더 많이 채우기
       const phi = Math.acos(2 * Math.random() - 1)
       const theta = Math.random() * Math.PI * 2
-      const r = Math.random() * 0.85
+      const r = Math.random() * 0.425
 
       const x = r * Math.sin(phi) * Math.cos(theta)
       const y = r * Math.sin(phi) * Math.sin(theta)
@@ -231,7 +236,7 @@ function SnowGlobeSpec() {
       particles.push({
         position: new THREE.Vector3(x, y, z),
         velocity: new THREE.Vector3(0, -0.001, 0),
-        scale: 0.5 + Math.random() * 0.5
+        scale: 0.4 + Math.random() * 0.4 // 크기 변화 더 작게
       })
 
       dummy.position.set(x, y, z)
@@ -265,31 +270,49 @@ function SnowGlobeSpec() {
         glassMaterial.uniforms.time.value = elapsed
       }
 
-      // Update snow particles (simple physics)
+      // Update snow particles (viscous liquid physics - like glycerin)
       const { mesh, particles, dummy } = snowParticlesRef.current
-      const gravity = new THREE.Vector3(0, -0.0005, 0)
-      const globeRadius = 0.85
+      const gravity = new THREE.Vector3(0, -0.00015, 0) // Much weaker gravity
+      const globeRadius = 0.425 // 절반 크기
+      const dragCoefficient = 0.92 // High drag for viscous liquid (0.92 = 8% velocity loss per frame)
+      const buoyancy = 0.00008 // Slight upward force
 
       for (let i = 0; i < particles.length; i++) {
         const particle = particles[i]
 
-        // Apply gravity
+        // Apply gravity (very gentle)
         particle.velocity.add(gravity)
 
-        // Apply simple curl noise
-        const noise = Math.sin(particle.position.x * 5 + elapsed) * 0.0002
-        particle.velocity.x += noise
-        particle.velocity.z += Math.cos(particle.position.z * 5 + elapsed) * 0.0002
+        // Apply buoyancy (slight upward force)
+        particle.velocity.y += buoyancy
+
+        // Apply viscous drag (this is key for slow, floaty motion)
+        particle.velocity.multiplyScalar(dragCoefficient)
+
+        // Apply gentle swirling motion (like liquid currents)
+        const swirl = Math.sin(particle.position.x * 3 + elapsed * 0.3) * 0.00008
+        const swirlZ = Math.cos(particle.position.z * 3 + elapsed * 0.3) * 0.00008
+        particle.velocity.x += swirl
+        particle.velocity.z += swirlZ
+
+        // Add gentle turbulence
+        const turbulence = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.00002,
+          (Math.random() - 0.5) * 0.00002,
+          (Math.random() - 0.5) * 0.00002
+        )
+        particle.velocity.add(turbulence)
 
         // Update position
         particle.position.add(particle.velocity)
 
-        // Collision with globe sphere
+        // Soft collision with globe sphere (viscous bounce)
         const dist = particle.position.length()
         if (dist > globeRadius) {
           const normal = particle.position.clone().normalize()
           particle.position.copy(normal.multiplyScalar(globeRadius))
-          particle.velocity.reflect(normal).multiplyScalar(0.5)
+          // Very soft bounce with high energy loss
+          particle.velocity.reflect(normal).multiplyScalar(0.15)
         }
 
         // Update matrix
@@ -331,7 +354,7 @@ function SnowGlobeSpec() {
     if (!snowParticlesRef.current) return
     const { particles } = snowParticlesRef.current
 
-    // VERY strong shake effect - swirl around the globe
+    // Shake effect in viscous liquid - slower, more graceful swirling
     particles.forEach(particle => {
       // Create a circular motion around the center
       const pos = particle.position.clone()
@@ -340,17 +363,17 @@ function SnowGlobeSpec() {
       const tangent = new THREE.Vector3(-pos.z, 0, pos.x).normalize()
       const upwardBoost = new THREE.Vector3(0, 1, 0)
 
-      // Combine spinning + upward + random chaos
+      // Gentler shake for viscous liquid (will slow down quickly due to drag)
       particle.velocity.add(
-        tangent.multiplyScalar(0.15 + Math.random() * 0.1) // Strong spin
+        tangent.multiplyScalar(0.04 + Math.random() * 0.03) // Gentler spin
       )
       particle.velocity.add(
-        upwardBoost.multiplyScalar(0.08 + Math.random() * 0.04) // Upward burst
+        upwardBoost.multiplyScalar(0.02 + Math.random() * 0.01) // Gentle upward burst
       )
       particle.velocity.add(new THREE.Vector3(
-        (Math.random() - 0.5) * 0.1,
-        (Math.random() - 0.5) * 0.1,
-        (Math.random() - 0.5) * 0.1
+        (Math.random() - 0.5) * 0.03,
+        (Math.random() - 0.5) * 0.03,
+        (Math.random() - 0.5) * 0.03
       ))
     })
   }
