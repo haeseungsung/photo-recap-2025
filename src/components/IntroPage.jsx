@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import SnowGlobeSpec from './SnowGlobeSpec'
+import IntroSnowScene from './IntroSnowScene'
 import '../styles/IntroPage.css'
 
 function IntroPage({ onStart }) {
@@ -15,17 +15,8 @@ function IntroPage({ onStart }) {
 
   return (
     <div className={`intro-page ${isAnimating ? 'fade-out' : ''}`}>
-      {/* 3D Snow Globe */}
-      <div className="intro-background">
-        <SnowGlobeSpec />
-      </div>
-
-      {/* CTA Button overlay */}
-      <div className="intro-cta-overlay">
-        <button className="intro-cta-modern" onClick={handleStart}>
-          <span className="intro-cta-text">시작하기</span>
-        </button>
-      </div>
+      {/* 2D Parallax Snow Globe */}
+      <IntroSnowScene onStart={handleStart} />
     </div>
   )
 }

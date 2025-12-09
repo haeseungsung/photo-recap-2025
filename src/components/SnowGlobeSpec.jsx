@@ -48,12 +48,12 @@ const glassFragmentShader = `
     // Thin-film interference (매우 미묘하게)
     vec3 filmColor = thinFilmColor(dot(viewDir, normal));
 
-    // Final color: transparent base + very subtle thin-film + specular highlight
-    vec3 baseColor = vec3(1.0, 1.0, 1.0);
-    vec3 finalColor = mix(baseColor, filmColor, fresnel * 0.1) + vec3(spec * 0.3);
+    // Final color: transparent base with blue tint + very subtle thin-film + specular highlight
+    vec3 baseColor = vec3(0.95, 0.97, 1.0); // 약간 파란색 틴트
+    vec3 finalColor = mix(baseColor, filmColor, fresnel * 0.15) + vec3(spec * 0.3);
 
     // Very high transmission (얇은 유리 - 거의 투명)
-    float alpha = 0.08 + fresnel * 0.05;
+    float alpha = 0.12 + fresnel * 0.06;
 
     gl_FragColor = vec4(finalColor, alpha);
   }
@@ -121,8 +121,8 @@ function SnowGlobeSpec() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.3)
     scene.add(ambientLight)
 
-    // Glass globe with custom shader (NO reflections) - 절반 크기 (0.5)
-    const globeGeometry = new THREE.IcosahedronGeometry(0.5, 64)
+    // Glass globe with custom shader (NO reflections) - 30% 축소 (0.35)
+    const globeGeometry = new THREE.IcosahedronGeometry(0.35, 64)
     const glassMaterial = new THREE.ShaderMaterial({
       vertexShader: glassVertexShader,
       fragmentShader: glassFragmentShader,
@@ -137,15 +137,15 @@ function SnowGlobeSpec() {
     scene.add(globe)
     globeRef.current = globe
 
-    // Base (wooden platform) - 절반 크기
-    const baseGeometry = new THREE.CylinderGeometry(0.55, 0.6, 0.1, 32)
+    // Base (wooden platform) - 30% 축소
+    const baseGeometry = new THREE.CylinderGeometry(0.455, 0.49, 0.105, 32)
     const baseMaterial = new THREE.MeshStandardMaterial({
-      color: 0x8B4513,
+      color: 0xA0826D, // 밝은 나무색
       roughness: 0.8,
       metalness: 0.1
     })
     const base = new THREE.Mesh(baseGeometry, baseMaterial)
-    base.position.y = -0.55
+    base.position.y = -0.4025
     base.castShadow = true
     base.receiveShadow = true
     scene.add(base)
@@ -153,59 +153,115 @@ function SnowGlobeSpec() {
     // Simple cabin (box + pyramid roof) - 절반 크기
     const cabinGroup = new THREE.Group()
 
-    // Cabin base
-    const cabinGeometry = new THREE.BoxGeometry(0.2, 0.15, 0.2)
+    // Cabin base - 30% 축소
+    const cabinGeometry = new THREE.BoxGeometry(0.175, 0.14, 0.175)
     const cabinMaterial = new THREE.MeshStandardMaterial({
-      color: 0xD2691E,
+      color: 0xB87333, // 밝은 갈색
       roughness: 0.7
     })
     const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial)
-    cabin.position.y = -0.375
+    cabin.position.y = -0.266
     cabin.castShadow = true
     cabin.receiveShadow = true
     cabinGroup.add(cabin)
 
-    // Roof
-    const roofGeometry = new THREE.ConeGeometry(0.175, 0.125, 4)
+    // Roof - 30% 축소
+    const roofGeometry = new THREE.ConeGeometry(0.154, 0.126, 4)
     const roofMaterial = new THREE.MeshStandardMaterial({
-      color: 0xDC143C,
+      color: 0xF5F5F5, // 하얀색 지붕 (눈 덮인 느낌)
       roughness: 0.6
     })
     const roof = new THREE.Mesh(roofGeometry, roofMaterial)
-    roof.position.y = -0.2375
+    roof.position.y = -0.133
     roof.rotation.y = Math.PI / 4
     roof.castShadow = true
     cabinGroup.add(roof)
 
-    // Window lights (emissive)
-    const windowGeometry = new THREE.BoxGeometry(0.04, 0.04, 0.01)
+    // Door - 30% 축소
+    const doorGeometry = new THREE.BoxGeometry(0.042, 0.07, 0.01)
+    const doorMaterial = new THREE.MeshStandardMaterial({
+      color: 0x4A5568,
+      roughness: 0.8
+    })
+    const door = new THREE.Mesh(doorGeometry, doorMaterial)
+    door.position.set(0, -0.301, 0.0882)
+    cabinGroup.add(door)
+
+    // Window lights - 30% 축소
+    const windowGeometry = new THREE.BoxGeometry(0.035, 0.035, 0.01)
     const windowMaterial = new THREE.MeshStandardMaterial({
       color: 0xFFFF00,
       emissive: 0xFFAA00,
       emissiveIntensity: 2
     })
     const window1 = new THREE.Mesh(windowGeometry, windowMaterial)
-    window1.position.set(0.05, -0.35, 0.105)
+    window1.position.set(0.056, -0.224, 0.0882)
     cabinGroup.add(window1)
 
     const window2 = new THREE.Mesh(windowGeometry, windowMaterial)
-    window2.position.set(-0.05, -0.35, 0.105)
+    window2.position.set(-0.056, -0.224, 0.0882)
     cabinGroup.add(window2)
 
     scene.add(cabinGroup)
 
-    // Snow ground - 더 두껍게 (눈이 쌓인 느낌)
-    const snowGroundGeometry = new THREE.CylinderGeometry(0.45, 0.45, 0.08, 32)
+    // Christmas Trees - 30% 축소
+    // Tree 1 (왼쪽)
+    const tree1Group = new THREE.Group()
+    const treeGeometry1 = new THREE.ConeGeometry(0.056, 0.105, 8)
+    const treeGeometry2 = new THREE.ConeGeometry(0.049, 0.091, 8)
+    const treeGeometry3 = new THREE.ConeGeometry(0.042, 0.077, 8)
+    const treeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2D5A3D, // 어두운 녹색
+      roughness: 0.8
+    })
+
+    const treeBottom = new THREE.Mesh(treeGeometry1, treeMaterial)
+    treeBottom.position.y = -0.294
+    treeBottom.castShadow = true
+    tree1Group.add(treeBottom)
+
+    const treeMiddle = new THREE.Mesh(treeGeometry2, treeMaterial)
+    treeMiddle.position.y = -0.224
+    treeMiddle.castShadow = true
+    tree1Group.add(treeMiddle)
+
+    const treeTop = new THREE.Mesh(treeGeometry3, treeMaterial)
+    treeTop.position.y = -0.161
+    treeTop.castShadow = true
+    tree1Group.add(treeTop)
+
+    // Tree trunk - 30% 축소
+    const trunkGeometry = new THREE.CylinderGeometry(0.0105, 0.014, 0.035, 8)
+    const trunkMaterial = new THREE.MeshStandardMaterial({
+      color: 0x4A3728,
+      roughness: 0.9
+    })
+    const trunk1 = new THREE.Mesh(trunkGeometry, trunkMaterial)
+    trunk1.position.y = -0.329
+    trunk1.castShadow = true
+    tree1Group.add(trunk1)
+
+    tree1Group.position.set(-0.14, 0, 0.105)
+    scene.add(tree1Group)
+
+    // Tree 2 (오른쪽)
+    const tree2Group = tree1Group.clone()
+    tree2Group.position.set(0.14, 0, -0.105)
+    scene.add(tree2Group)
+
+    // Snow ground - 30% 축소
+    const snowGroundGeometry = new THREE.CylinderGeometry(0.336, 0.336, 0.042, 32)
     const snowGroundMaterial = new THREE.MeshStandardMaterial({
       color: 0xFFFFFF,
       emissive: 0xFFFFFF,
-      emissiveIntensity: 0.1,
-      roughness: 0.9,
+      emissiveIntensity: 0.2,
+      roughness: 0.7,
       metalness: 0.05
     })
     const snowGround = new THREE.Mesh(snowGroundGeometry, snowGroundMaterial)
-    snowGround.position.y = -0.425
+    snowGround.position.y = -0.329
     snowGround.receiveShadow = true
+    snowGround.castShadow = true
     scene.add(snowGround)
 
     // Initialize 4000 snow particles (더 많이, 더 작게) - 반짝이는 하얀 눈
@@ -227,7 +283,7 @@ function SnowGlobeSpec() {
       // Random position inside sphere - 더 많이 채우기
       const phi = Math.acos(2 * Math.random() - 1)
       const theta = Math.random() * Math.PI * 2
-      const r = Math.random() * 0.425
+      const r = Math.random() * 0.2975 // 30% 축소 (0.425 * 0.7)
 
       const x = r * Math.sin(phi) * Math.cos(theta)
       const y = r * Math.sin(phi) * Math.sin(theta)
@@ -273,7 +329,7 @@ function SnowGlobeSpec() {
       // Update snow particles (viscous liquid physics - like glycerin)
       const { mesh, particles, dummy } = snowParticlesRef.current
       const gravity = new THREE.Vector3(0, -0.00015, 0) // Much weaker gravity
-      const globeRadius = 0.425 // 절반 크기
+      const globeRadius = 0.2975 // 30% 축소 (0.425 * 0.7)
       const dragCoefficient = 0.92 // High drag for viscous liquid (0.92 = 8% velocity loss per frame)
       const buoyancy = 0.00008 // Slight upward force
 

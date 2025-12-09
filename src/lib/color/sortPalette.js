@@ -129,33 +129,77 @@ export function generatePaletteName(palette) {
   const hues = paletteWithHsl.map(c => c.hsl.h)
   const dominantHueRange = getDominantHueRange(hues)
 
-  // 4. 이름 생성 로직
+  // 4. 이름 생성 로직 - 위트있는 조합
+  const lightnessNames = {
+    veryBright: ['Dreamy', 'Heavenly', 'Angelic', 'Cotton Candy', 'Cloud Nine'],
+    bright: ['Sunny', 'Cheerful', 'Breezy', 'Morning Glow', 'Daylight'],
+    medium: ['Cozy', 'Mellow', 'Warm Hug', 'Golden Hour', 'Afternoon'],
+    deep: ['Moody', 'Twilight', 'Vintage', 'Dusk', 'Candlelit'],
+    dark: ['Midnight', 'Mysterious', 'Noir', 'Starry Night', 'Moonlit']
+  }
+
+  const saturationNames = {
+    vivid: ['Electric', 'Poppy', 'Neon', 'Vibrant', 'Bold'],
+    rich: ['Lush', 'Velvet', 'Royal', 'Jewel-toned', 'Opulent'],
+    muted: ['Dusty', 'Vintage', 'Sage', 'Earthy', 'Muted'],
+    neutral: ['Minimalist', 'Zen', 'Nordic', 'Calm', 'Serene']
+  }
+
+  const hueNames = {
+    'Reds': ['Romance', 'Sunset', 'Rose Garden', 'Cherry Blossom', 'Fire'],
+    'Oranges': ['Autumn', 'Tangerine Dream', 'Peachy Keen', 'Citrus', 'Warmth'],
+    'Yellows': ['Sunshine', 'Lemonade', 'Golden', 'Butter', 'Honey'],
+    'Greens': ['Forest', 'Matcha', 'Garden', 'Mint', 'Nature'],
+    'Cyans': ['Ocean', 'Aqua', 'Tropical', 'Poolside', 'Lagoon'],
+    'Blues': ['Sky', 'Denim', 'Sapphire', 'Ocean Depth', 'Indigo'],
+    'Purples': ['Lavender', 'Galaxy', 'Plum', 'Mystic', 'Orchid'],
+    'Spectrum': ['Rainbow', 'Kaleidoscope', 'Carnival', 'Festival', 'Prism']
+  }
+
+  // 랜덤 선택 함수
+  const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
+
+  // 명도 카테고리 결정
+  let lightnessCategory
+  if (avgLightness > 80) {
+    lightnessCategory = lightnessNames.veryBright
+  } else if (avgLightness > 60) {
+    lightnessCategory = lightnessNames.bright
+  } else if (avgLightness > 45) {
+    lightnessCategory = lightnessNames.medium
+  } else if (avgLightness > 25) {
+    lightnessCategory = lightnessNames.deep
+  } else {
+    lightnessCategory = lightnessNames.dark
+  }
+
+  // 채도 카테고리 결정
+  let saturationCategory
+  if (avgSaturation > 65) {
+    saturationCategory = saturationNames.vivid
+  } else if (avgSaturation > 40) {
+    saturationCategory = saturationNames.rich
+  } else if (avgSaturation > 20) {
+    saturationCategory = saturationNames.muted
+  } else {
+    saturationCategory = saturationNames.neutral
+  }
+
+  // 색상 카테고리
+  const hueCategory = hueNames[dominantHueRange] || hueNames['Spectrum']
+
+  // 이름 조합 (50% 확률로 형용사 + 색상, 50% 확률로 색상만)
+  const useAdjective = Math.random() > 0.3
   let name = ''
 
-  // 명도 형용사
-  if (avgLightness > 75) {
-    name += 'Bright '
-  } else if (avgLightness > 50) {
-    name += 'Soft '
-  } else if (avgLightness > 30) {
-    name += 'Deep '
+  if (useAdjective) {
+    // 명도 또는 채도 형용사 중 하나 선택
+    const useLight = Math.random() > 0.5
+    const adjective = useLight ? pickRandom(lightnessCategory) : pickRandom(saturationCategory)
+    name = `${adjective} ${pickRandom(hueCategory)}`
   } else {
-    name += 'Dark '
+    name = pickRandom(hueCategory)
   }
-
-  // 채도 형용사
-  if (avgSaturation > 70) {
-    name += 'Vivid '
-  } else if (avgSaturation > 40) {
-    name += 'Rich '
-  } else if (avgSaturation > 20) {
-    name += 'Muted '
-  } else {
-    name += 'Neutral '
-  }
-
-  // 색상 계열
-  name += dominantHueRange
 
   return name
 }

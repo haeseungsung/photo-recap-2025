@@ -214,10 +214,10 @@ function ResultPage({ analysisResult }) {
       )}
 
       <header className="result-header">
-        <h1 className="result-title">{paletteName}</h1>
         <p className="result-subtitle">
           Your 2025 color palette
         </p>
+        <h1 className="result-title">{paletteName}</h1>
 
         {/* Color Palette Bar - 헤더 바로 아래 */}
         <div className="color-palette-bar">

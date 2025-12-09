@@ -84,7 +84,7 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
     const allDominantColors = imagesWithColors.map(img => img.dominantColors.map(c => c.rgb))
     const colorPalette = selectColorPalette(allDominantColors, {
       paletteSize: 6,
-      minDeltaE: 20
+      minDeltaE: 15 // 녹색 계열 등 유사한 색상도 잘 잡히도록 조정
     })
     updateProgress()
 
