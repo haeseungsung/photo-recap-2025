@@ -160,8 +160,19 @@
   margin-bottom: var(--spacing-lg);
 }
 
-.upload-button {
+/* 버튼 행 (가로 배치) */
+.button-row {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-sm);
   width: 100%;
+  max-width: 640px;
+  justify-content: center;
+  align-items: center;
+}
+
+.upload-button {
+  flex: 1;
   max-width: 320px;
   padding: 16px 24px;
   background-color: var(--color-primary);
@@ -185,6 +196,37 @@
 }
 
 .upload-button:disabled {
+  background-color: #CCCCCC;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 상단 분석 시작 버튼 (업로드 버튼 옆) */
+.analyze-button-top {
+  flex: 1;
+  max-width: 320px;
+  padding: 16px 24px;
+  background-color: var(--color-text);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.analyze-button-top:hover:not(:disabled) {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.analyze-button-top:active:not(:disabled) {
+  transform: scale(1.03);
+}
+
+.analyze-button-top:disabled {
   background-color: #CCCCCC;
   cursor: not-allowed;
   box-shadow: none;
@@ -340,6 +382,18 @@
 
   .upload-subtitle {
     font-size: 13px;
+  }
+
+  /* 모바일에서 버튼 세로 배치 */
+  .button-row {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+
+  .upload-button,
+  .analyze-button-top {
+    width: 100%;
+    max-width: 320px;
   }
 
   .thumbnail-grid {

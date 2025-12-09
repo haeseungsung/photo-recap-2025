@@ -170,12 +170,24 @@ function UploadPage({ onStartAnalysis }) {
 
       {/* 업로드 버튼 영역 */}
       <div className="upload-actions">
-        <button
-          className="upload-button"
-          onClick={handleUploadClick}
-        >
-          {selectedFiles.length === 0 ? '사진 선택하기' : '사진 추가하기'}
-        </button>
+        <div className="button-row">
+          <button
+            className="upload-button"
+            onClick={handleUploadClick}
+          >
+            {selectedFiles.length === 0 ? '사진 선택하기' : '사진 추가하기'}
+          </button>
+
+          {selectedFiles.length > 0 && (
+            <button
+              className="analyze-button-top"
+              onClick={handleAnalyze}
+              disabled={isAnalyzeDisabled}
+            >
+              분석 시작하기
+            </button>
+          )}
+        </div>
 
         <div className="upload-count">
           {selectedFiles.length}/{MAX_IMAGES}장 선택됨

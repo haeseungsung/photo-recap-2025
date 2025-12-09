@@ -6,8 +6,7 @@
   height: 100vh;
   overflow: hidden;
   color: #ffffff;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text',
-    'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-primary);
   background: radial-gradient(circle at top, #2f3a63 0%, #050814 60%, #020308 100%);
 }
 
