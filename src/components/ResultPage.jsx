@@ -82,10 +82,10 @@ function ResultPage({ analysisResult }) {
 
     // 11개의 스티커를 화면에 랜덤 배치 (컬러 팔레트 영역 제외)
     for (let i = 1; i <= totalStickers; i++) {
-      // sticker-5와 sticker-11은 기본 크기의 1/3, 나머지는 기본 크기 1
+      // sticker-5와 sticker-11은 기본 크기의 1/3, 나머지는 0.5
       const baseScale = (i === 5 || i === 11)
         ? 1 / 3  // 0.33
-        : 1      // 1.0
+        : 0.5    // 0.5
 
       generatedStickers.push({
         id: i,
