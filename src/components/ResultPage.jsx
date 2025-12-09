@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import '../styles/ResultPage.css'
 import { hexFromRgb } from '../lib/color/hexFromRgb.js'
 import { sortPalette, generatePaletteName } from '../lib/color/sortPalette.js'
+import ColorChipModal from './ColorChipModal.jsx'
 
 function ResultPage({ analysisResult }) {
   const [imageUrls, setImageUrls] = useState([])
@@ -9,6 +10,7 @@ function ResultPage({ analysisResult }) {
   const [sparkles, setSparkles] = useState([])
   const [randomTapes, setRandomTapes] = useState([])
   const [randomStickers, setRandomStickers] = useState([])
+  const [selectedColor, setSelectedColor] = useState(null)
 
   // 디버깅: 결과 확인
   console.log('ResultPage - analysisResult:', analysisResult)
@@ -82,10 +84,10 @@ function ResultPage({ analysisResult }) {
 
     // 11개의 스티커를 화면에 랜덤 배치 (컬러 팔레트 영역 제외)
     for (let i = 1; i <= totalStickers; i++) {
-      // sticker-5와 sticker-11은 기본 크기의 1/3, 나머지는 0.5
+      // sticker-5와 sticker-11은 0.1, 나머지는 0.3
       const baseScale = (i === 5 || i === 11)
-        ? 1 / 3  // 0.33
-        : 0.5    // 0.5
+        ? 0.1
+        : 0.3
 
       generatedStickers.push({
         id: i,
@@ -224,6 +226,7 @@ function ResultPage({ analysisResult }) {
               key={index}
               className="color-segment"
               style={{ backgroundColor: hex }}
+              onClick={() => setSelectedColor(sortedPalette[index])}
             />
           ))}
         </div>
@@ -299,6 +302,14 @@ function ResultPage({ analysisResult }) {
           Generated with 2025 Color Recap
         </p>
       </div>
+
+      {/* Color Chip Modal */}
+      {selectedColor && (
+        <ColorChipModal
+          color={selectedColor}
+          onClose={() => setSelectedColor(null)}
+        />
+      )}
 
     </div>
   )
