@@ -1,34 +1,41 @@
 import { useState, useEffect } from 'react'
 import '../styles/ResultPage.css'
 import { hexFromRgb } from '../lib/color/hexFromRgb.js'
-import { generateColorName } from '../lib/color/generateColorName.js'
+import { sortPalette, generatePaletteName } from '../lib/color/sortPalette.js'
 
 function ResultPage({ analysisResult }) {
   const [imageUrls, setImageUrls] = useState([])
   const [isTransitioned, setIsTransitioned] = useState(false)
   const [sparkles, setSparkles] = useState([])
-  const [selectedColorIndex, setSelectedColorIndex] = useState(null)
+  const [randomTapes, setRandomTapes] = useState([])
+  const [randomStickers, setRandomStickers] = useState([])
 
   // 디버깅: 결과 확인
   console.log('ResultPage - analysisResult:', analysisResult)
 
-  // 클러스터링 결과 구조: { keyColors, representatives, clusterA, clusterB }
-  if (!analysisResult || !analysisResult.keyColors) {
+  // 클러스터링 결과 구조: { colorPalette, representatives, keyColors (하위 호환) }
+  if (!analysisResult || (!analysisResult.colorPalette && !analysisResult.keyColors)) {
     return <div>분석 결과가 없습니다.</div>
   }
 
-  const { keyColors, representatives } = analysisResult
+  const { colorPalette, representatives } = analysisResult
   console.log('ResultPage - representatives:', representatives)
-  const color1 = {
-    rgb: keyColors.colorA,
-    hex: hexFromRgb(keyColors.colorA),
-    name: generateColorName(keyColors.colorA)
-  }
-  const color2 = {
-    rgb: keyColors.colorB,
-    hex: hexFromRgb(keyColors.colorB),
-    name: generateColorName(keyColors.colorB)
-  }
+  console.log('ResultPage - colorPalette:', colorPalette)
+
+  // 컬러 팔레트 정렬 및 이름 생성
+  const sortedPalette = colorPalette ? sortPalette(colorPalette, 'auto') : [
+    analysisResult.keyColors.colorA,
+    analysisResult.keyColors.colorB
+  ]
+
+  const paletteName = generatePaletteName(sortedPalette)
+
+  // 팔레트를 hex로 변환
+  const paletteColors = sortedPalette.map(rgb => hexFromRgb(rgb))
+
+  console.log('sortedPalette:', sortedPalette)
+  console.log('paletteName:', paletteName)
+  console.log('paletteColors:', paletteColors)
 
   // 대표 이미지들의 File 객체에서 URL 생성
   useEffect(() => {
@@ -52,6 +59,47 @@ function ResultPage({ analysisResult }) {
       imageUrls.forEach(url => url && URL.revokeObjectURL(url))
     }
   }, [representatives])
+
+  // tape 파일 9개 랜덤 선택
+  useEffect(() => {
+    const totalTapes = 24 // tape-1.png ~ tape-24.png
+    const tapeIndices = Array.from({ length: totalTapes }, (_, i) => i + 1)
+
+    // Fisher-Yates shuffle
+    for (let i = tapeIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[tapeIndices[i], tapeIndices[j]] = [tapeIndices[j], tapeIndices[i]]
+    }
+
+    // 처음 9개 선택
+    setRandomTapes(tapeIndices.slice(0, 9))
+  }, [])
+
+  // sticker 파일들 랜덤 배치 (화면 전반, 상단 20% 제외)
+  useEffect(() => {
+    const totalStickers = 11 // sticker-1.png ~ sticker-11.png
+    const generatedStickers = []
+
+    // 11개의 스티커를 화면에 랜덤 배치 (컬러 팔레트 영역 제외)
+    for (let i = 1; i <= totalStickers; i++) {
+      // sticker-5와 sticker-11은 기본 크기의 1/3, 나머지는 기본 크기 1
+      const baseScale = (i === 5 || i === 11)
+        ? 1 / 3  // 0.33
+        : 1      // 1.0
+
+      generatedStickers.push({
+        id: i,
+        number: i,
+        top: Math.random() * 60 + 30, // 30% ~ 90% (상단 20% 제외)
+        left: Math.random() * 80 + 10, // 10% ~ 90%
+        rotation: Math.random() * 360, // 0deg ~ 360deg
+        scale: baseScale,
+        opacity: 0.7 + Math.random() * 0.3 // 0.7 ~ 1.0
+      })
+    }
+
+    setRandomStickers(generatedStickers)
+  }, [])
 
   // 초기 팡파레 별 애니메이션
   useEffect(() => {
@@ -98,18 +146,6 @@ function ResultPage({ analysisResult }) {
     return () => clearTimeout(timer)
   }, [])
 
-  // 컬러칩 클릭 핸들러
-  const handleColorClick = (index) => {
-    if (isTransitioned) {
-      setSelectedColorIndex(index)
-    }
-  }
-
-  // 모달 닫기
-  const handleCloseModal = () => {
-    setSelectedColorIndex(null)
-  }
-
   // 다시하기
   const handleRestart = () => {
     window.location.reload()
@@ -136,6 +172,26 @@ function ResultPage({ analysisResult }) {
 
   return (
     <div className="result-page">
+      {/* Random Stickers - 화면 전반에 배치 */}
+      {randomStickers.length > 0 && (
+        <div className="random-stickers">
+          {randomStickers.map((sticker) => (
+            <img
+              key={sticker.id}
+              src={`/images/sticker-${sticker.number}.png`}
+              alt=""
+              className="random-sticker"
+              style={{
+                top: `${sticker.top}%`,
+                left: `${sticker.left}%`,
+                transform: `rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
+                opacity: sticker.opacity
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Celebration Sparkles */}
       {sparkles.length > 0 && (
         <div className="celebration-sparkles">
@@ -156,92 +212,83 @@ function ResultPage({ analysisResult }) {
       )}
 
       <header className="result-header">
-        <h1 className="result-title">Your 2025 Color Palette</h1>
+        <h1 className="result-title">{paletteName}</h1>
         <p className="result-subtitle">
-          These are the defining colors of your year
+          Your 2025 color palette
         </p>
+
+        {/* Color Palette Bar - 헤더 바로 아래 */}
+        <div className="color-palette-bar">
+          {paletteColors.map((hex, index) => (
+            <div
+              key={index}
+              className="color-segment"
+              style={{ backgroundColor: hex }}
+            />
+          ))}
+        </div>
       </header>
 
       {/* Main Content Container - 전환 애니메이션 적용 */}
       <div className={`result-content ${isTransitioned ? 'transitioned' : ''}`}>
-        {/* 컬러칩과 액션 버튼 컨테이너 */}
-        <div className="left-column">
-          {/* Top 2 Key Colors - Pantone 스타일 */}
-          <div className="color-cards">
-            {/* Color 1 */}
-            <div
-              className="color-card"
-              onClick={() => handleColorClick(0)}
-              style={{ cursor: isTransitioned ? 'pointer' : 'default' }}
-            >
-              <div
-                className="color-swatch"
-                style={{ backgroundColor: color1.hex }}
-              />
-              <div className="color-info">
-                <h2 className="color-name">{color1.name}</h2>
-                <p className="color-hex">{color1.hex}</p>
-              </div>
-            </div>
-
-            {/* Color 2 */}
-            <div
-              className="color-card"
-              onClick={() => handleColorClick(1)}
-              style={{ cursor: isTransitioned ? 'pointer' : 'default' }}
-            >
-              <div
-                className="color-swatch"
-                style={{ backgroundColor: color2.hex }}
-              />
-              <div className="color-info">
-                <h2 className="color-name">{color2.name}</h2>
-                <p className="color-hex">{color2.hex}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 액션 버튼들 (전환 후에만 표시) */}
-          {isTransitioned && (
-            <div className="action-buttons">
-              <button
-                className="action-button restart-button"
-                onClick={handleRestart}
-                aria-label="다시하기"
-              >
-                ↻
-              </button>
-              <button
-                className="action-button share-button"
-                onClick={handleShare}
-                aria-label="공유하기"
-              >
-                ⎋
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Representative Images */}
+        {/* Representative Images - Polaroid Collage */}
         {representatives && representatives.length > 0 && (
           <div className="representative-section">
             <div className="image-grid">
-              {representatives.map((rep, index) => (
-                <div key={index} className="image-item">
-                  {imageUrls[index] ? (
+              {representatives.map((rep, index) => {
+                // 랜덤하게 선택된 tape 이미지 사용
+                const tapeNumber = randomTapes[index] || 1
+                const tapePath = `/images/tape-${tapeNumber}.png`
+
+                return (
+                  <div key={index} className="image-item">
+                    {/* 테이프 이미지 */}
                     <img
-                      src={imageUrls[index]}
-                      alt={`Representative ${index + 1}`}
-                      className="representative-image"
+                      src={tapePath}
+                      alt=""
+                      className="tape-sticker"
+                      onError={(e) => {
+                        // 이미지 로드 실패시 숨김 (CSS 기본 테이프 사용)
+                        e.target.style.display = 'none'
+                      }}
                     />
-                  ) : (
-                    <div className="image-placeholder">
-                      Loading...
+                    <div className="image-wrapper">
+                      {imageUrls[index] ? (
+                        <img
+                          src={imageUrls[index]}
+                          alt={`Representative ${index + 1}`}
+                          className="representative-image"
+                        />
+                      ) : (
+                        <div className="image-placeholder">
+                          Loading...
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
+          </div>
+        )}
+
+        {/* 액션 버튼들 (하단에 표시) */}
+        {isTransitioned && (
+          <div className="action-buttons">
+            <button
+              className="action-button restart-button"
+              onClick={handleRestart}
+              aria-label="다시하기"
+            >
+              ↻
+            </button>
+            <button
+              className="action-button share-button"
+              onClick={handleShare}
+              aria-label="공유하기"
+            >
+              ⎋
+            </button>
           </div>
         )}
       </div>
@@ -253,35 +300,6 @@ function ResultPage({ analysisResult }) {
         </p>
       </div>
 
-      {/* 컬러 상세 모달 */}
-      {selectedColorIndex !== null && (
-        <div className="color-modal-overlay" onClick={handleCloseModal}>
-          <div className="color-modal-content" onClick={(e) => e.stopPropagation()}>
-            {/* 닫기 버튼 */}
-            <button className="modal-close-button" onClick={handleCloseModal}>
-              ×
-            </button>
-
-            {/* 선택된 컬러 카드 */}
-            <div className="color-card modal-color-card">
-              <div
-                className="color-swatch"
-                style={{
-                  backgroundColor: selectedColorIndex === 0 ? color1.hex : color2.hex
-                }}
-              />
-              <div className="color-info">
-                <h2 className="color-name">
-                  {selectedColorIndex === 0 ? color1.name : color2.name}
-                </h2>
-                <p className="color-hex">
-                  {selectedColorIndex === 0 ? color1.hex : color2.hex}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

@@ -3,17 +3,42 @@
  * 2025 Recap 프로젝트 - 클러스터링 전체 파이프라인
  *
  * 1. 이미지별 dominant colors 추출
- * 2. Top 2 KeyColors 선정
- * 3. 이미지를 클러스터 A/B로 배정
- * 4. KeyColor 포함 점수 계산
- * 5. 대표 이미지 4~6장 선정
+ * 2. Color Palette (5-8개) 선정
+ * 3. 대표 이미지 4~6장 선정
  */
 
 import { extractDominantColors } from '../color/extractDominantColors.js'
-import { selectTop2Colors } from '../color/selectTop2Colors.js'
-import { assignClusters } from './assignClusters.js'
-import { calculateKeyColorScores } from './calculateKeyColorScore.js'
-import { selectRepresentativeImages } from './selectRepresentativeImages.js'
+import { selectColorPalette } from '../color/selectColorPalette.js'
+import { rgbToLab, calculateDeltaE } from '../color/calculateLabDeltaE.js'
+
+/**
+ * 이미지의 dominant colors와 color palette 간의 매칭 점수 계산
+ * @param {Array} dominantColors - 이미지의 dominant colors (with proportion)
+ * @param {Array} palette - color palette (RGB 배열)
+ * @returns {number} 매칭 점수 (0-100)
+ */
+function calculatePaletteMatchScore(dominantColors, palette) {
+  const paletteLab = palette.map(rgb => rgbToLab(rgb))
+  let totalScore = 0
+
+  for (const colorData of dominantColors) {
+    const colorLab = rgbToLab(colorData.rgb)
+
+    // 팔레트에서 가장 가까운 색상과의 거리 찾기
+    let minDeltaE = Infinity
+    for (const pLab of paletteLab) {
+      const deltaE = calculateDeltaE(colorLab, pLab)
+      minDeltaE = Math.min(minDeltaE, deltaE)
+    }
+
+    // 거리가 가까울수록 높은 점수 (proportion으로 가중치)
+    // deltaE가 0이면 100점, 50이면 0점
+    const similarity = Math.max(0, 100 - minDeltaE * 2)
+    totalScore += similarity * colorData.proportion
+  }
+
+  return totalScore
+}
 
 /**
  * 클러스터링 전체 프로세스 실행
@@ -55,50 +80,52 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
       updateProgress()
     }
 
-    // 2. 모든 이미지의 dominant colors에서 Top 2 KeyColors 선정
+    // 2. 모든 이미지의 dominant colors에서 Color Palette 선정 (5-8개)
     const allDominantColors = imagesWithColors.map(img => img.dominantColors.map(c => c.rgb))
-    const [keyColorA, keyColorB] = selectTop2Colors(allDominantColors)
-    updateProgress()
-
-    // 3. 이미지를 클러스터 A/B로 배정 (LAB 거리 기반)
-    const clusterAssignment = assignClusters(imagesWithColors, keyColorA, keyColorB)
-    updateProgress()
-
-    // 4. 각 이미지의 KeyColor 포함 점수 계산
-    const imageScores = calculateKeyColorScores(imagesWithColors, keyColorA, keyColorB)
-    updateProgress()
-
-    // 5. 대표 이미지 4~6장 선정 (totalScore 높은 순)
-    const representatives = selectRepresentativeImages(imageScores, clusterAssignment, {
-      minCount: 4,
-      maxCount: 6,
-      balanced: false // 균형 잡힌 선택 비활성화 (순수 점수 기반)
+    const colorPalette = selectColorPalette(allDominantColors, {
+      paletteSize: 6,
+      minDeltaE: 20
     })
     updateProgress()
 
-    // 6. 대표 이미지에 File 객체 추가
-    console.log('processClustering - representatives before adding files:', representatives)
-    console.log('processClustering - imagesWithColors:', imagesWithColors.map(img => ({ imageId: img.imageId, hasFile: !!img.file })))
-
-    const representativesWithFiles = representatives.map(rep => {
-      const imageData = imagesWithColors.find(img => img.imageId === rep.imageId)
-      console.log(`Finding file for ${rep.imageId}:`, imageData ? 'found' : 'not found', imageData)
+    // 3. 대표 이미지 선정 (팔레트 색상 포함도 기반)
+    // 각 이미지에 대해 팔레트 색상과의 유사도 점수 계산
+    const imageScores = imagesWithColors.map(img => {
+      // 팔레트 색상들과 이미지의 dominant colors 간의 유사도 계산
+      const score = calculatePaletteMatchScore(img.dominantColors, colorPalette)
       return {
-        ...rep,
-        file: imageData ? imageData.file : null
+        imageId: img.imageId,
+        score,
+        file: img.file
       }
     })
 
-    console.log('processClustering - representativesWithFiles:', representativesWithFiles)
+    // 점수 순으로 정렬하고, 임계값 이상인 모든 이미지를 포함
+    imageScores.sort((a, b) => b.score - a.score)
 
-    // 7. 최종 결과 구조 생성
+    // 점수가 높은 순으로 상위 9개만 선택
+    const MAX_REPRESENTATIVES = 9
+    const representatives = imageScores
+      .slice(0, MAX_REPRESENTATIVES)
+      .map((img, index) => ({
+        imageId: img.imageId,
+        file: img.file,
+        score: img.score,
+        rank: index + 1
+      }))
+
+    updateProgress()
+
+    console.log('processClustering - representatives:', representatives)
+
+    // 4. 최종 결과 구조 생성
     const result = {
-      clusterA: clusterAssignment.clusterA,
-      clusterB: clusterAssignment.clusterB,
-      representatives: representativesWithFiles,
+      colorPalette, // 5-8개의 색상 팔레트
+      representatives, // 대표 이미지 9장
+      // 하위 호환성을 위해 기존 필드 유지 (첫 2개 색상)
       keyColors: {
-        colorA: keyColorA,
-        colorB: keyColorB
+        colorA: colorPalette[0] || { r: 100, g: 100, b: 100 },
+        colorB: colorPalette[1] || { r: 200, g: 200, b: 200 }
       }
     }
 

@@ -5,7 +5,7 @@
 
 // 상수 정의
 export const MIN_IMAGES = 20
-export const MAX_IMAGES = 30
+export const MAX_IMAGES = 50
 export const ALLOWED_FORMATS = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
 export const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'heic', 'heif']
 
