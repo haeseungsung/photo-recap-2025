@@ -1,0 +1,76 @@
+import React, { useState } from 'react';
+import { AppState, PhotoData, PaletteResult } from './types';
+import { IntroPage } from './components/IntroPage';
+import { UploadPage } from './components/UploadPage';
+import { LoadingPage } from './components/LoadingPage';
+import { ResultPage } from './components/ResultPage';
+import { generatePaletteFromColors } from './utils/colorUtils';
+import { analyzePaletteWithGemini } from './services/geminiService';
+
+const App: React.FC = () => {
+  const [appState, setAppState] = useState<AppState>(AppState.INTRO);
+  const [photos, setPhotos] = useState<PhotoData[]>([]);
+  const [result, setResult] = useState<PaletteResult | null>(null);
+
+  const startAnalysis = async (uploadedPhotos: PhotoData[]) => {
+    setPhotos(uploadedPhotos);
+    setAppState(AppState.LOADING);
+
+    try {
+      // 1. Extract dominant colors from all photos (already done during upload)
+      const allColors = uploadedPhotos.map(p => p.dominantColor);
+
+      // 2. Generate Palette (K-means clustering)
+      const paletteColors = generatePaletteFromColors(allColors, 5);
+
+      // 3. Get Creative Title from Gemini
+      // Artificial delay to ensure the loading animation plays at least a bit for "Vibing"
+      const [aiResult] = await Promise.all([
+        analyzePaletteWithGemini(paletteColors),
+        // Reduce delay to 3 seconds as requested
+        new Promise(resolve => setTimeout(resolve, 3000))
+      ]);
+
+      setResult({
+        title: aiResult.title,
+        hashtags: aiResult.hashtags,
+        colors: paletteColors
+      });
+
+      setAppState(AppState.RESULT);
+    } catch (error) {
+      console.error("Analysis failed", error);
+      // Fallback or error state could go here, for now restart
+      setAppState(AppState.INTRO);
+    }
+  };
+
+  const resetApp = () => {
+    setPhotos([]);
+    setResult(null);
+    setAppState(AppState.INTRO);
+  };
+
+  return (
+    <main>
+      {appState === AppState.INTRO && (
+        <IntroPage onStart={() => setAppState(AppState.UPLOAD)} />
+      )}
+      {appState === AppState.UPLOAD && (
+        <UploadPage onAnalyze={startAnalysis} />
+      )}
+      {appState === AppState.LOADING && (
+        <LoadingPage />
+      )}
+      {appState === AppState.RESULT && result && (
+        <ResultPage 
+          photos={photos} 
+          palette={result} 
+          onRetry={resetApp} 
+        />
+      )}
+    </main>
+  );
+};
+
+export default App;
