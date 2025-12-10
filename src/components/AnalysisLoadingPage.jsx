@@ -54,12 +54,12 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
   }
 
   useEffect(() => {
-    // 동사 변경 (1.8초마다)
+    // 동사 변경 (1.2초마다 - 더 빠르게)
     const verbInterval = setInterval(() => {
       setCurrentVerbIndex((prev) => (prev + 1) % verbs.length)
-    }, 1800)
+    }, 1200)
 
-    // 카드 떨어뜨리기 시작 (0.5초 후)
+    // 카드 떨어뜨리기 시작 (0.3초 후)
     const cardStartTimeout = setTimeout(() => {
       const cardInterval = setInterval(() => {
         const randomColor = pantoneColors[Math.floor(Math.random() * pantoneColors.length)]
@@ -80,18 +80,18 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
             x,
             y,
             rotation,
-            delay: 0.3 + (prev.length * 0.05),
+            delay: 0.2 + (prev.length * 0.03),
             zIndex: 10 + prev.length
           }
 
-          // 최대 15개까지만 유지 (성능 최적화)
+          // 최대 12개까지만 유지 (성능 최적화)
           const updated = [...prev, newCard]
-          return updated.length > 15 ? updated.slice(-15) : updated
+          return updated.length > 12 ? updated.slice(-12) : updated
         })
-      }, 600) // 0.6초마다 카드 생성 (성능 최적화)
+      }, 400) // 0.4초마다 카드 생성 (더 빠르게)
 
       return () => clearInterval(cardInterval)
-    }, 500)
+    }, 300)
 
     // 실제 색상 분석 시작
     startColorAnalysis()
@@ -116,8 +116,8 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
 
       console.log('분석 완료! 결과:', result)
 
-      // 최소 3초 로딩 보장
-      const minLoadingTime = 3000
+      // 최소 1.5초 로딩 보장 (더 빠르게)
+      const minLoadingTime = 1500
       const elapsed = Date.now()
       const remaining = Math.max(0, minLoadingTime - elapsed)
 
@@ -179,12 +179,12 @@ function AnalysisLoadingPage({ selectedFiles, onAnalysisComplete }) {
               opacity: 1
             }}
             transition={{
-              duration: 1,
+              duration: 0.7,
               delay: card.delay,
               type: 'spring',
-              damping: 20,
-              stiffness: 80,
-              mass: 0.8
+              damping: 18,
+              stiffness: 100,
+              mass: 0.6
             }}
             className="color-card"
             style={{

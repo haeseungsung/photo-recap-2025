@@ -1,124 +1,12 @@
 .upload-page {
   position: relative;
   width: 100%;
-  min-height: 100vh;
-  background-color: #ffffff;
+  min-height: 100dvh;
+  background-color: #000000;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* Background Layers */
-.upload-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-}
-
-/* Sparkle Stars Layer - 반짝이는 별 */
-.sparkle-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.sparkle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: radial-gradient(circle, rgba(150, 150, 150, 0.9) 0%, rgba(100, 100, 100, 0.6) 50%, transparent 100%);
-  border-radius: 50%;
-  box-shadow: 0 0 6px rgba(150, 150, 150, 0.8);
-  animation: sparkle-fall linear infinite;
-  opacity: 0;
-}
-
-@keyframes sparkle-fall {
-  0% {
-    transform: translateY(-10px) scale(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) scale(0.5);
-    opacity: 0;
-  }
-}
-
-/* 여러 개의 별 생성 */
-.sparkle:nth-child(1) { left: 10%; animation-duration: 3s; animation-delay: 0s; }
-.sparkle:nth-child(2) { left: 20%; animation-duration: 3.5s; animation-delay: 0.3s; }
-.sparkle:nth-child(3) { left: 30%; animation-duration: 2.8s; animation-delay: 0.6s; }
-.sparkle:nth-child(4) { left: 40%; animation-duration: 3.2s; animation-delay: 0.9s; }
-.sparkle:nth-child(5) { left: 50%; animation-duration: 3.7s; animation-delay: 1.2s; }
-.sparkle:nth-child(6) { left: 60%; animation-duration: 3s; animation-delay: 1.5s; }
-.sparkle:nth-child(7) { left: 70%; animation-duration: 3.4s; animation-delay: 1.8s; }
-.sparkle:nth-child(8) { left: 80%; animation-duration: 2.9s; animation-delay: 2.1s; }
-.sparkle:nth-child(9) { left: 90%; animation-duration: 3.3s; animation-delay: 2.4s; }
-.sparkle:nth-child(10) { left: 15%; animation-duration: 3.1s; animation-delay: 2.7s; }
-.sparkle:nth-child(11) { left: 25%; animation-duration: 3.6s; animation-delay: 0.2s; }
-.sparkle:nth-child(12) { left: 35%; animation-duration: 2.7s; animation-delay: 0.5s; }
-.sparkle:nth-child(13) { left: 45%; animation-duration: 3.4s; animation-delay: 0.8s; }
-.sparkle:nth-child(14) { left: 55%; animation-duration: 3.2s; animation-delay: 1.1s; }
-.sparkle:nth-child(15) { left: 65%; animation-duration: 2.9s; animation-delay: 1.4s; }
-.sparkle:nth-child(16) { left: 75%; animation-duration: 3.5s; animation-delay: 1.7s; }
-.sparkle:nth-child(17) { left: 85%; animation-duration: 3.1s; animation-delay: 2s; }
-.sparkle:nth-child(18) { left: 95%; animation-duration: 3.3s; animation-delay: 2.3s; }
-.sparkle:nth-child(19) { left: 5%; animation-duration: 2.8s; animation-delay: 2.6s; }
-.sparkle:nth-child(20) { left: 48%; animation-duration: 3.7s; animation-delay: 0.4s; }
-
-/* Emoji Layer - 긍정적인 이모지들 */
-.emoji-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 2;
-}
-
-/* 동적으로 생성되는 이모지 (쌓이는 효과) */
-.falling-emoji-dynamic {
-  position: absolute;
-  top: -50px;
-  font-size: 24px;
-  animation: emoji-fall-stack linear forwards;
-  opacity: 0;
-}
-
-/* 쌓이는 이모지 애니메이션 */
-@keyframes emoji-fall-stack {
-  0% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.9;
-  }
-  90% {
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(calc(100vh + 100px)) rotate(360deg);
-    opacity: 0.7;
-  }
 }
 
 /* Content Wrapper */
@@ -138,16 +26,18 @@
 }
 
 .upload-title {
+  font-family: var(--font-primary);
   font-size: 28px;
   font-weight: 600;
-  color: var(--color-text);
+  color: #ffffff;
   margin-bottom: var(--spacing-sm);
   line-height: 1.3;
 }
 
 .upload-subtitle {
+  font-family: var(--font-primary);
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 400;
 }
 
@@ -174,29 +64,33 @@
 .upload-button {
   flex: 1;
   max-width: 320px;
-  padding: 16px 24px;
-  background-color: var(--color-primary);
-  color: white;
+  padding: 1rem 3rem;
+  font-family: var(--font-primary);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #000000;
+  background-color: #ffffff;
   border: none;
-  border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(209, 82, 74, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
 }
 
 .upload-button:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(209, 82, 74, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 30px rgba(255, 255, 255, 0.4);
+  background-color: #f0f0f0;
 }
 
 .upload-button:active:not(:disabled) {
-  transform: scale(1.03);
+  transform: translateY(-1px);
 }
 
 .upload-button:disabled {
-  background-color: #CCCCCC;
+  background-color: rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.3);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -205,36 +99,41 @@
 .analyze-button-top {
   flex: 1;
   max-width: 320px;
-  padding: 16px 24px;
-  background-color: var(--color-text);
-  color: white;
+  padding: 1rem 3rem;
+  font-family: var(--font-primary);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #000000;
+  background-color: #ffffff;
   border: none;
-  border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
 }
 
 .analyze-button-top:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 30px rgba(255, 255, 255, 0.4);
+  background-color: #f0f0f0;
 }
 
 .analyze-button-top:active:not(:disabled) {
-  transform: scale(1.03);
+  transform: translateY(-1px);
 }
 
 .analyze-button-top:disabled {
-  background-color: #CCCCCC;
+  background-color: rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.3);
   cursor: not-allowed;
   box-shadow: none;
 }
 
 .upload-count {
+  font-family: var(--font-primary);
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
 }
 
@@ -338,29 +237,33 @@
   max-width: 320px;
   margin: 0 auto;
   display: block;
-  padding: 18px 24px;
-  background-color: var(--color-text);
-  color: white;
+  padding: 1rem 3rem;
+  font-family: var(--font-primary);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #000000;
+  background-color: #ffffff;
   border: none;
-  border-radius: var(--radius-sm);
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: 50px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
 }
 
 .analyze-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 30px rgba(255, 255, 255, 0.4);
+  background-color: #f0f0f0;
 }
 
 .analyze-button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(-1px);
 }
 
 .analyze-button:disabled {
-  background-color: #CCCCCC;
+  background-color: rgba(255, 255, 255, 0.3);
+  color: rgba(0, 0, 0, 0.3);
   cursor: not-allowed;
   box-shadow: none;
 }
@@ -394,6 +297,8 @@
   .analyze-button-top {
     width: 100%;
     max-width: 320px;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
   }
 
   .thumbnail-grid {
@@ -411,6 +316,12 @@
 @media (max-width: 375px) {
   .upload-title {
     font-size: 22px;
+  }
+
+  .upload-button,
+  .analyze-button-top {
+    padding: 0.85rem 2.2rem;
+    font-size: 1rem;
   }
 
   .thumbnail-grid {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import '../styles/ResultPage.css'
 import { hexFromRgb } from '../lib/color/hexFromRgb.js'
 import { sortPalette, generatePaletteName } from '../lib/color/sortPalette.js'
@@ -6,10 +6,7 @@ import ColorChipModal from './ColorChipModal.jsx'
 
 function ResultPage({ analysisResult }) {
   const [imageUrls, setImageUrls] = useState([])
-  const [isTransitioned, setIsTransitioned] = useState(false)
-  const [sparkles, setSparkles] = useState([])
-  const [randomTapes, setRandomTapes] = useState([])
-  const [randomStickers, setRandomStickers] = useState([])
+  const [hoveredColorIndex, setHoveredColorIndex] = useState(null)
   const [selectedColor, setSelectedColor] = useState(null)
 
   // 디버깅: 결과 확인
@@ -62,245 +59,154 @@ function ResultPage({ analysisResult }) {
     }
   }, [representatives])
 
-  // tape 파일 9개 랜덤 선택
-  useEffect(() => {
-    const totalTapes = 24 // tape-1.png ~ tape-24.png
-    const tapeIndices = Array.from({ length: totalTapes }, (_, i) => i + 1)
+  // Combine processed image data with colorIndex
+  const collageItems = useMemo(() => {
+    if (!representatives || representatives.length === 0) return []
 
-    // Fisher-Yates shuffle
-    for (let i = tapeIndices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1))
-      ;[tapeIndices[i], tapeIndices[j]] = [tapeIndices[j], tapeIndices[i]]
-    }
-
-    // 처음 9개 선택
-    setRandomTapes(tapeIndices.slice(0, 9))
-  }, [])
-
-  // sticker 파일들 랜덤 배치 (화면 전반, 상단 20% 제외)
-  useEffect(() => {
-    const totalStickers = 11 // sticker-1.png ~ sticker-11.png
-    const generatedStickers = []
-
-    // 11개의 스티커를 화면에 랜덤 배치 (컬러 팔레트 영역 제외)
-    for (let i = 1; i <= totalStickers; i++) {
-      // sticker-5와 sticker-11은 0.1, 나머지는 0.3
-      const baseScale = (i === 5 || i === 11)
-        ? 0.1
-        : 0.3
-
-      generatedStickers.push({
-        id: i,
-        number: i,
-        top: Math.random() * 60 + 30, // 30% ~ 90% (상단 20% 제외)
-        left: Math.random() * 80 + 10, // 10% ~ 90%
-        rotation: Math.random() * 360, // 0deg ~ 360deg
-        scale: baseScale,
-        opacity: 0.7 + Math.random() * 0.3 // 0.7 ~ 1.0
-      })
-    }
-
-    setRandomStickers(generatedStickers)
-  }, [])
-
-  // 초기 팡파레 별 애니메이션
-  useEffect(() => {
-    const createSparkles = () => {
-      const newSparkles = []
-      const centerX = window.innerWidth / 2
-      const centerY = window.innerHeight / 3
-
-      // 100개의 별 생성 (더 많이)
-      for (let i = 0; i < 100; i++) {
-        const angle = (Math.PI * 2 * i) / 100
-        const distance = 150 + Math.random() * 250
-        const tx = Math.cos(angle) * distance
-        const ty = Math.sin(angle) * distance
-        const duration = 0.6 + Math.random() * 0.5
-
-        newSparkles.push({
-          id: i,
-          x: centerX,
-          y: centerY,
-          tx,
-          ty,
-          duration
-        })
+    const items = representatives.map((rep, index) => {
+      // clusterIndex는 팔레트 배열의 인덱스와 일치해야 함
+      const colorIndex = rep.clusterIndex ?? 0
+      return {
+        id: rep.id || index,
+        url: imageUrls[index],
+        colorIndex,
+        score: rep.totalScore || 0
       }
+    }).filter(item => item.url)
 
-      setSparkles(newSparkles)
+    console.log('Collage items with colorIndex:', items)
+    console.log('Number of palette colors:', paletteColors.length)
+    return items
+  }, [representatives, imageUrls, paletteColors])
 
-      // 애니메이션 완료 후 별 제거
-      setTimeout(() => {
-        setSparkles([])
-      }, 1500)
-    }
+  // "Jittered Grid" Layout Calculation
+  const layoutStyles = useMemo(() => {
+    const count = collageItems.length
+    if (count === 0) return []
 
-    createSparkles()
-  }, [])
+    // Determine grid dimensions based on aspect ratio
+    const isPortrait = window.innerHeight > window.innerWidth
+    const cols = isPortrait ? 3 : 5
+    const rows = Math.ceil(count / cols)
 
-  // 2초 후 레이아웃 전환 애니메이션
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsTransitioned(true)
-    }, 2000)
+    return collageItems.map((_, index) => {
+      const col = index % cols
+      const row = Math.floor(index / cols)
 
-    return () => clearTimeout(timer)
-  }, [])
+      // Base grid position (in percentages)
+      // Leaving space at the bottom-left for the palette
+      // Available area: 0-60% height (top 60% of screen)
+      const sectionHeight = 60 / rows
+      const sectionWidth = 100 / cols
+
+      const baseX = col * sectionWidth + (sectionWidth / 2)
+      const baseY = row * sectionHeight + (sectionHeight / 2)
+
+      // Add "Jitter" (Random offset within the cell)
+      // Constrain jitter to keep images in safe zone (not over palette)
+      const jitterX = (Math.random() - 0.5) * (sectionWidth * 0.8)
+      const jitterY = (Math.random() - 0.5) * (sectionHeight * 0.8)
+
+      // Ensure images stay in top 60% of screen
+      const finalY = Math.min(baseY + jitterY, 55)
+
+      // Random Rotation (-15 to 15 degrees)
+      const rotation = (Math.random() - 0.5) * 30
+
+      return {
+        left: `${baseX + jitterX}%`,
+        top: `${finalY}%`,
+        transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+        zIndex: index + 10,
+      }
+    })
+  }, [collageItems])
 
   // 다시하기
   const handleRestart = () => {
     window.location.reload()
   }
 
-  // 공유하기
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: '2025 Color Recap',
-          text: 'Check out my 2025 color palette!',
-          url: window.location.href
-        })
-      } catch (error) {
-        console.log('Share failed:', error)
-      }
-    } else {
-      // 폴백: 클립보드 복사
-      navigator.clipboard.writeText(window.location.href)
-      alert('링크가 복사되었습니다!')
-    }
-  }
-
   return (
     <div className="result-page">
-      {/* Random Stickers - 화면 전반에 배치 */}
-      {randomStickers.length > 0 && (
-        <div className="random-stickers">
-          {randomStickers.map((sticker) => (
-            <img
-              key={sticker.id}
-              src={`/images/sticker-${sticker.number}.png`}
-              alt=""
-              className="random-sticker"
-              style={{
-                top: `${sticker.top}%`,
-                left: `${sticker.left}%`,
-                transform: `rotate(${sticker.rotation}deg) scale(${sticker.scale})`,
-                opacity: sticker.opacity
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Background Subtle Texture */}
+      <div className="subtle-texture" />
 
-      {/* Celebration Sparkles */}
-      {sparkles.length > 0 && (
-        <div className="celebration-sparkles">
-          {sparkles.map((sparkle) => (
-            <div
-              key={sparkle.id}
-              className="celebration-sparkle"
-              style={{
-                left: sparkle.x,
-                top: sparkle.y,
-                '--tx': `${sparkle.tx}px`,
-                '--ty': `${sparkle.ty}px`,
-                animationDuration: `${sparkle.duration}s`
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      <header className="result-header">
-        <p className="result-subtitle">
-          Your 2025 color palette
-        </p>
-        <h1 className="result-title">{paletteName}</h1>
-
-        {/* Color Palette Bar - 헤더 바로 아래 */}
-        <div className="color-palette-bar">
-          {paletteColors.map((hex, index) => (
-            <div
-              key={index}
-              className="color-segment"
-              style={{ backgroundColor: hex }}
-              onClick={() => setSelectedColor(sortedPalette[index])}
-            />
-          ))}
-        </div>
-      </header>
-
-      {/* Main Content Container - 전환 애니메이션 적용 */}
-      <div className={`result-content ${isTransitioned ? 'transitioned' : ''}`}>
-        {/* Representative Images - Polaroid Collage */}
-        {representatives && representatives.length > 0 && (
-          <div className="representative-section">
-            <div className="image-grid">
-              {representatives.map((rep, index) => {
-                // 랜덤하게 선택된 tape 이미지 사용
-                const tapeNumber = randomTapes[index] || 1
-                const tapePath = `/images/tape-${tapeNumber}.png`
-
-                return (
-                  <div key={index} className="image-item">
-                    {/* 테이프 이미지 */}
-                    <img
-                      src={tapePath}
-                      alt=""
-                      className="tape-sticker"
-                      onError={(e) => {
-                        // 이미지 로드 실패시 숨김 (CSS 기본 테이프 사용)
-                        e.target.style.display = 'none'
-                      }}
-                    />
-                    <div className="image-wrapper">
-                      {imageUrls[index] ? (
-                        <img
-                          src={imageUrls[index]}
-                          alt={`Representative ${index + 1}`}
-                          className="representative-image"
-                        />
-                      ) : (
-                        <div className="image-placeholder">
-                          Loading...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 액션 버튼들 (하단에 표시) */}
-        {isTransitioned && (
-          <div className="action-buttons">
-            <button
-              className="action-button restart-button"
-              onClick={handleRestart}
-              aria-label="다시하기"
-            >
-              ↻
-            </button>
-            <button
-              className="action-button share-button"
-              onClick={handleShare}
-              aria-label="공유하기"
-            >
-              ⎋
-            </button>
-          </div>
-        )}
+      {/* Header Actions */}
+      <div className="header-actions">
+        <button onClick={handleRestart} className="new-board-button">
+          New Moodboard
+        </button>
       </div>
 
-      {/* 추가 정보 */}
-      <div className="result-footer">
-        <p className="result-credit">
-          Generated with 2025 Color Recap
-        </p>
+      {/* Main Collage Container */}
+      <div className="collage-container">
+        {collageItems.map((item, idx) => {
+          const style = layoutStyles[idx]
+
+          // cases처럼 간단하게: 호버한 컬러와 이미지의 컬러가 다르면 dim
+          const isDimmed = hoveredColorIndex !== null && item.colorIndex !== hoveredColorIndex
+
+          return (
+            <div
+              key={item.id}
+              className={`collage-item ${isDimmed ? 'dimmed' : ''}`}
+              style={{
+                left: style.left,
+                top: style.top,
+                transform: isDimmed
+                  ? `${style.transform} scale(0.95)`
+                  : `${style.transform} scale(1.0)`,
+                zIndex: isDimmed ? 5 : style.zIndex,
+              }}
+            >
+              <img
+                src={item.url}
+                alt="Collage item"
+                draggable={false}
+              />
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Palette Section - Bottom Left */}
+      <div className="palette-section">
+        <div className="palette-content">
+
+          {/* Keywords & Title */}
+          <div className="palette-header">
+            <h2 className="palette-title">
+              {paletteName}
+            </h2>
+          </div>
+
+          {/* Color Palette - Spaced out, no border */}
+          <div className="color-palette">
+            {paletteColors.map((color, idx) => (
+              <div
+                key={idx}
+                className={`color-circle ${hoveredColorIndex === idx ? 'hovered' : ''}`}
+                onMouseEnter={() => {
+                  console.log(`Hovering color index ${idx}`)
+                  console.log('Items with this colorIndex:', collageItems.filter(item => item.colorIndex === idx))
+                  setHoveredColorIndex(idx)
+                }}
+                onMouseLeave={() => {
+                  console.log('Stopped hovering')
+                  setHoveredColorIndex(null)
+                }}
+                onClick={() => setSelectedColor(sortedPalette[idx])}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+
+          {/* Palette Footer Label */}
+          <div className="palette-label">
+            Your 2025 Color Palette
+          </div>
+        </div>
       </div>
 
       {/* Color Chip Modal */}

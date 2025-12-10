@@ -1,16 +1,16 @@
 /**
- * 대표 이미지 선정 (4~6장)
+ * 대표 이미지 선정 (업로드한 사진의 50%)
  * 2025 Recap 프로젝트 - KeyColor 포함 비율이 높은 이미지 선정
  *
- * scoreA + scoreB 총합이 높은 순서대로 4~6장을 선택합니다.
+ * scoreA + scoreB 총합이 높은 순서대로 50%를 선택합니다.
  * 선택적으로 클러스터 A/B 균형을 고려할 수 있습니다.
  */
 
 /**
- * KeyColor 포함 점수가 높은 대표 이미지 4~6장 선정
+ * KeyColor 포함 점수가 높은 대표 이미지 선정 (전체의 50%)
  * @param {Array<Object>} imageScores - calculateKeyColorScores의 결과
  * @param {Object} clusterAssignment - { clusterA: [...], clusterB: [...] }
- * @param {Object} options - { minCount: 4, maxCount: 6, balanced: false }
+ * @param {Object} options - { balanced: false }
  * @returns {Array<RepresentativeImage>} 선정된 대표 이미지 배열
  */
 export function selectRepresentativeImages(
@@ -18,7 +18,14 @@ export function selectRepresentativeImages(
   clusterAssignment,
   options = {}
 ) {
-  const { minCount = 4, maxCount = 6, balanced = false } = options
+  const { balanced = false } = options
+
+  // 전체 이미지의 50% 계산 (최소 4장, 최대 15장)
+  const totalImages = imageScores.length
+  const targetCount = Math.max(4, Math.min(15, Math.round(totalImages * 0.5)))
+
+  const minCount = targetCount
+  const maxCount = targetCount
 
   // 1. totalScore 기준으로 내림차순 정렬
   const sortedScores = [...imageScores].sort((a, b) => b.totalScore - a.totalScore)

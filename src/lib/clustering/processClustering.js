@@ -89,39 +89,101 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
     updateProgress()
 
     // 3. 대표 이미지 선정 (팔레트 색상 포함도 기반)
-    // 각 이미지에 대해 팔레트 색상과의 유사도 점수 계산
+    // 각 이미지에 대해 가장 가까운 팔레트 색상 찾기
+    const paletteLab = colorPalette.map(rgb => rgbToLab(rgb))
+
     const imageScores = imagesWithColors.map(img => {
       // 팔레트 색상들과 이미지의 dominant colors 간의 유사도 계산
       const score = calculatePaletteMatchScore(img.dominantColors, colorPalette)
+
+      // 이미지의 주요 색상과 가장 가까운 팔레트 색상 찾기
+      let bestClusterIndex = 0
+      let minTotalDistance = Infinity
+
+      for (let paletteIdx = 0; paletteIdx < colorPalette.length; paletteIdx++) {
+        let totalDistance = 0
+        for (const colorData of img.dominantColors) {
+          const colorLab = rgbToLab(colorData.rgb)
+          const deltaE = calculateDeltaE(colorLab, paletteLab[paletteIdx])
+          totalDistance += deltaE * colorData.proportion
+        }
+
+        if (totalDistance < minTotalDistance) {
+          minTotalDistance = totalDistance
+          bestClusterIndex = paletteIdx
+        }
+      }
+
       return {
         imageId: img.imageId,
         score,
-        file: img.file
+        file: img.file,
+        clusterIndex: bestClusterIndex
       }
     })
 
-    // 점수 순으로 정렬하고, 임계값 이상인 모든 이미지를 포함
+    // 점수 순으로 정렬
     imageScores.sort((a, b) => b.score - a.score)
 
-    // 점수가 높은 순으로 상위 9개만 선택
-    const MAX_REPRESENTATIVES = 9
-    const representatives = imageScores
-      .slice(0, MAX_REPRESENTATIVES)
-      .map((img, index) => ({
-        imageId: img.imageId,
-        file: img.file,
-        score: img.score,
-        rank: index + 1
-      }))
+    // 전체 이미지의 50% 선택 (최소 4장, 최대 15장)
+    const targetCount = Math.max(4, Math.min(15, Math.round(imageFiles.length * 0.5)))
+
+    // 각 팔레트 색상별로 이미지 그룹화
+    const imagesByCluster = {}
+    for (let i = 0; i < colorPalette.length; i++) {
+      imagesByCluster[i] = []
+    }
+
+    for (const img of imageScores) {
+      imagesByCluster[img.clusterIndex].push(img)
+    }
+
+    // 각 클러스터에서 최소 1개씩 선택하되, 남은 자리는 점수 순으로 채움
+    const representatives = []
+    const usedImages = new Set()
+
+    // 1단계: 각 팔레트 색상에서 최고 점수 이미지 1개씩 선택
+    for (let clusterIdx = 0; clusterIdx < colorPalette.length; clusterIdx++) {
+      const clusterImages = imagesByCluster[clusterIdx]
+      if (clusterImages.length > 0 && representatives.length < targetCount) {
+        const bestImage = clusterImages[0] // 이미 점수순 정렬되어 있음
+        representatives.push({
+          imageId: bestImage.imageId,
+          file: bestImage.file,
+          score: bestImage.score,
+          rank: representatives.length + 1,
+          clusterIndex: bestImage.clusterIndex,
+          totalScore: bestImage.score
+        })
+        usedImages.add(bestImage.imageId)
+      }
+    }
+
+    // 2단계: 남은 자리를 점수 순으로 채움
+    for (const img of imageScores) {
+      if (representatives.length >= targetCount) break
+      if (!usedImages.has(img.imageId)) {
+        representatives.push({
+          imageId: img.imageId,
+          file: img.file,
+          score: img.score,
+          rank: representatives.length + 1,
+          clusterIndex: img.clusterIndex,
+          totalScore: img.score
+        })
+        usedImages.add(img.imageId)
+      }
+    }
 
     updateProgress()
 
     console.log('processClustering - representatives:', representatives)
+    console.log('Representative cluster distribution:', representatives.map(r => r.clusterIndex))
 
     // 4. 최종 결과 구조 생성
     const result = {
       colorPalette, // 5-8개의 색상 팔레트
-      representatives, // 대표 이미지 9장
+      representatives, // 대표 이미지 (전체의 50%)
       // 하위 호환성을 위해 기존 필드 유지 (첫 2개 색상)
       keyColors: {
         colorA: colorPalette[0] || { r: 100, g: 100, b: 100 },
@@ -130,6 +192,7 @@ export async function processClustering(imageFiles, onProgress = () => {}) {
     }
 
     console.log('processClustering - final result:', result)
+    console.log(`Selected ${representatives.length} out of ${imageFiles.length} images (${Math.round(representatives.length / imageFiles.length * 100)}%)`)
     return result
   } catch (error) {
     console.error('Clustering process failed:', error)

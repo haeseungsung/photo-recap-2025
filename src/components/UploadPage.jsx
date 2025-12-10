@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import '../styles/UploadPage.css'
 import {
   MIN_IMAGES,
@@ -13,45 +13,7 @@ function UploadPage({ onStartAnalysis }) {
   const [previewUrls, setPreviewUrls] = useState([])
   const [validationMessage, setValidationMessage] = useState('')
   const [validationMessageType, setValidationMessageType] = useState('info')
-  const [fallingEmojis, setFallingEmojis] = useState([])
   const fileInputRef = useRef(null)
-  const emojiIdCounter = useRef(0)
-
-  const emojiList = ['✨', '💫', '⭐', '🌟', '💖', '💕', '🌈', '🎨', '🎵', '🌸', '🌺', '🦋', '🎀', '🌙', '☀️']
-
-  // 이모지 계속 생성 및 쌓기 (IntroPage와 동일)
-  useEffect(() => {
-    const createEmoji = () => {
-      const emoji = emojiList[Math.floor(Math.random() * emojiList.length)]
-      const left = Math.random() * 100
-      const duration = 7 + Math.random() * 2.5
-      const id = emojiIdCounter.current++
-
-      setFallingEmojis(prev => [...prev, {
-        id,
-        emoji,
-        left,
-        duration
-      }])
-
-      setTimeout(() => {
-        setFallingEmojis(prev => {
-          if (prev.length > 50) {
-            return prev.slice(-50)
-          }
-          return prev
-        })
-      }, duration * 1000)
-    }
-
-    for (let i = 0; i < 10; i++) {
-      setTimeout(() => createEmoji(), i * 300)
-    }
-
-    const interval = setInterval(createEmoji, 800)
-
-    return () => clearInterval(interval)
-  }, [])
 
   // 파일 선택 핸들러
   const handleFileSelect = (e) => {
@@ -125,29 +87,6 @@ function UploadPage({ onStartAnalysis }) {
 
   return (
     <div className="upload-page">
-      {/* Background Layers */}
-      <div className="upload-background">
-        <div className="sparkle-layer">
-          {[...Array(20)].map((_, i) => (
-            <div key={i} className="sparkle"></div>
-          ))}
-        </div>
-        <div className="emoji-layer">
-          {fallingEmojis.map((item) => (
-            <div
-              key={item.id}
-              className="falling-emoji-dynamic"
-              style={{
-                left: `${item.left}%`,
-                animationDuration: `${item.duration}s`
-              }}
-            >
-              {item.emoji}
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Content */}
       <div className="upload-content">
         {/* 헤더 */}

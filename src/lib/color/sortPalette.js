@@ -129,35 +129,40 @@ export function generatePaletteName(palette) {
   const hues = paletteWithHsl.map(c => c.hsl.h)
   const dominantHueRange = getDominantHueRange(hues)
 
-  // 4. 이름 생성 로직 - 위트있는 조합
+  // 4. 이름 생성 로직 - 한국어 위트있는 조합
   const lightnessNames = {
-    veryBright: ['Dreamy', 'Heavenly', 'Angelic', 'Cotton Candy', 'Cloud Nine'],
-    bright: ['Sunny', 'Cheerful', 'Breezy', 'Morning Glow', 'Daylight'],
-    medium: ['Cozy', 'Mellow', 'Warm Hug', 'Golden Hour', 'Afternoon'],
-    deep: ['Moody', 'Twilight', 'Vintage', 'Dusk', 'Candlelit'],
-    dark: ['Midnight', 'Mysterious', 'Noir', 'Starry Night', 'Moonlit']
+    veryBright: ['몽환적인', '천상의', '구름 위', '솜사탕', '하늘하늘'],
+    bright: ['햇살 가득', '상쾌한', '아침의', '빛나는', '낮의'],
+    medium: ['포근한', '따스한', '아늑한', '골든아워', '오후의'],
+    deep: ['무드있는', '황혼의', '빈티지', '석양의', '촛불의'],
+    dark: ['한밤의', '신비로운', '별빛의', '달빛의', '그윽한']
   }
 
   const saturationNames = {
-    vivid: ['Electric', 'Poppy', 'Neon', 'Vibrant', 'Bold'],
-    rich: ['Lush', 'Velvet', 'Royal', 'Jewel-toned', 'Opulent'],
-    muted: ['Dusty', 'Vintage', 'Sage', 'Earthy', 'Muted'],
-    neutral: ['Minimalist', 'Zen', 'Nordic', 'Calm', 'Serene']
+    vivid: ['팝핑', '네온', '비비드', '톡톡 튀는', '선명한'],
+    rich: ['풍성한', '벨벳', '진한', '보석같은', '화려한'],
+    muted: ['차분한', '빈티지', '수채화', '자연스러운', '은은한'],
+    neutral: ['미니멀', '젠', '고요한', '평온한', '담백한']
   }
 
   const hueNames = {
-    'Reds': ['Romance', 'Sunset', 'Rose Garden', 'Cherry Blossom', 'Fire'],
-    'Oranges': ['Autumn', 'Tangerine Dream', 'Peachy Keen', 'Citrus', 'Warmth'],
-    'Yellows': ['Sunshine', 'Lemonade', 'Golden', 'Butter', 'Honey'],
-    'Greens': ['Forest', 'Matcha', 'Garden', 'Mint', 'Nature'],
-    'Cyans': ['Ocean', 'Aqua', 'Tropical', 'Poolside', 'Lagoon'],
-    'Blues': ['Sky', 'Denim', 'Sapphire', 'Ocean Depth', 'Indigo'],
-    'Purples': ['Lavender', 'Galaxy', 'Plum', 'Mystic', 'Orchid'],
-    'Spectrum': ['Rainbow', 'Kaleidoscope', 'Carnival', 'Festival', 'Prism']
+    'Reds': ['로맨스', '석양', '장미정원', '벚꽃', '불타는'],
+    'Oranges': ['가을감성', '귤', '복숭아빛', '시트러스', '따뜻함'],
+    'Yellows': ['햇살', '레모네이드', '황금빛', '버터', '꿀'],
+    'Greens': ['숲속', '말차', '정원', '민트', '자연'],
+    'Cyans': ['바다', '아쿠아', '열대', '풀장', '라군'],
+    'Blues': ['하늘', '데님', '사파이어', '깊은 바다', '인디고'],
+    'Purples': ['라벤더', '우주', '자두', '신비', '난초'],
+    'Spectrum': ['무지개', '만화경', '축제', '페스티벌', '프리즘']
   }
 
-  // 랜덤 선택 함수
-  const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)]
+  // 결정론적 선택 함수 (시드 기반)
+  const pickDeterministic = (arr, seed) => arr[seed % arr.length]
+
+  // 팔레트 기반 시드 생성 (첫 색상의 RGB 값 사용)
+  const seed = palette.length > 0
+    ? (palette[0].r + palette[0].g * 256 + palette[0].b * 65536)
+    : 0
 
   // 명도 카테고리 결정
   let lightnessCategory
@@ -188,17 +193,19 @@ export function generatePaletteName(palette) {
   // 색상 카테고리
   const hueCategory = hueNames[dominantHueRange] || hueNames['Spectrum']
 
-  // 이름 조합 (50% 확률로 형용사 + 색상, 50% 확률로 색상만)
-  const useAdjective = Math.random() > 0.3
+  // 이름 조합 (시드 기반 결정론적 선택)
+  const useAdjective = (seed % 10) > 3
   let name = ''
 
   if (useAdjective) {
-    // 명도 또는 채도 형용사 중 하나 선택
-    const useLight = Math.random() > 0.5
-    const adjective = useLight ? pickRandom(lightnessCategory) : pickRandom(saturationCategory)
-    name = `${adjective} ${pickRandom(hueCategory)}`
+    // 명도 또는 채도 형용사 중 하나 선택 (결정론적)
+    const useLight = (seed % 2) === 0
+    const adjective = useLight
+      ? pickDeterministic(lightnessCategory, seed)
+      : pickDeterministic(saturationCategory, seed)
+    name = `${adjective} ${pickDeterministic(hueCategory, seed + 1)} 팔레트`
   } else {
-    name = pickRandom(hueCategory)
+    name = `${pickDeterministic(hueCategory, seed)} 팔레트`
   }
 
   return name
