@@ -179,23 +179,23 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   }, [currentDetailIndex, detailPhotos, palette.colors]);
 
   return (
-    <div className="min-h-screen bg-gray-50 text-black p-4 md:p-8 flex flex-col items-center">
-      
+    <div className="h-[100dvh] bg-gray-50 text-black p-2 md:p-4 flex flex-col items-center overflow-hidden">
+
       {/* Action Bar */}
-      <div className="w-full max-w-6xl flex justify-between items-center mb-6 z-50">
+      <div className="w-full max-w-6xl flex justify-between items-center mb-2 md:mb-4 z-50 shrink-0">
         <button onClick={onRetry} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
-          <RefreshCw size={24} />
+          <RefreshCw size={20} />
         </button>
-        <button onClick={handleShare} className="flex items-center gap-2 bg-black text-white px-5 py-2.5 rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95">
-          <Share2 size={18} />
-          <span className="font-medium">Save & Share</span>
+        <button onClick={handleShare} className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 text-sm">
+          <Share2 size={16} />
+          <span className="font-medium">Save</span>
         </button>
       </div>
 
       {/* Main Content Area (Capture Target) */}
-      <div 
+      <div
         ref={captureRef}
-        className="w-full max-w-[1200px] aspect-[3/4] md:aspect-[16/9] bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate"
+        className="w-full max-w-[1200px] flex-1 bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate"
       >
         {isDetailView ? (
           // --- Detail View Content ---
@@ -348,28 +348,25 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
             </div>
           </>
         )}
-      </div>
-
-      {/* Buttons positioned outside the capture card */}
-      {!isDetailView ? (
-        <div className="mt-10 mb-6">
-            <button 
+        {/* View Toggle Button - Inside the card */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
+          {!isDetailView ? (
+            <button
                 onClick={() => setIsDetailView(true)}
-                className="bg-black text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
+                className="bg-black text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
             >
                 팔레트 자세히 보기
             </button>
-        </div>
-      ) : (
-        <div className="mt-10 mb-6">
-             <button 
+          ) : (
+            <button
                 onClick={() => setIsDetailView(false)}
-                className="bg-black text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
+                className="bg-black text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
             >
-                이전 결과로 돌아가기
+                돌아가기
             </button>
+          )}
         </div>
-      )}
+      </div>
 
     </div>
   );

@@ -110,7 +110,7 @@ export const LoadingPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full h-screen bg-[#FDFDFD] overflow-hidden">
+    <div className="relative w-full h-[100dvh] bg-[#FDFDFD] overflow-hidden">
       
       {/* Top Left Text */}
       <div className="absolute top-8 left-6 md:left-12 z-50 pointer-events-none mix-blend-multiply max-w-[90vw]">

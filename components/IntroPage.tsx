@@ -93,7 +93,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
   };
 
   return (
-    <div className="relative w-full h-screen bg-[#FDFDFD] overflow-hidden flex flex-col items-center justify-center" ref={containerRef}>
+    <div className="relative w-full h-[100dvh] bg-[#FDFDFD] overflow-hidden flex flex-col items-center justify-center" ref={containerRef}>
       
       {/* Background Scattered Cards */}
       <div className="absolute inset-0 pointer-events-none z-0">

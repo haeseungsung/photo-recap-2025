@@ -41,7 +41,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
   const canAnalyze = photos.length >= 20;
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
       
       <div className="max-w-4xl w-full flex flex-col items-center text-center space-y-8 z-10">
         <motion.div 
