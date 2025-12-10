@@ -1,0 +1,234 @@
+/* IntroPage.css - Typography Landing Page */
+
+.intro-page-typo {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  background-color: #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: opacity 0.6s ease-out;
+  padding: 2rem;
+}
+
+.intro-page-typo.fade-out {
+  opacity: 0;
+}
+
+/* Plexus Canvas - Behind Text */
+.plexus-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Typography Container */
+.typo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 90vw;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 10;
+}
+
+/* Main Typography */
+.typo-main {
+  font-family: var(--font-primary);
+  font-size: 20vw;
+  font-weight: 700;
+  line-height: 0.95;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+  width: 100%;
+}
+
+.typo-line {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.typo-line-right {
+  align-self: flex-end;
+  text-align: right;
+}
+
+/* Sticker Year */
+.sticker-line {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 2rem 0;
+}
+
+.sticker-year {
+  display: flex;
+  align-items: center;
+  gap: 0.3vw;
+  height: 12vw;
+}
+
+.sticker-digit {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  transform: rotate(0deg);
+}
+
+.sticker-digit:nth-child(1) {
+  transform: rotate(-3deg);
+}
+
+.sticker-digit:nth-child(2) {
+  transform: rotate(2deg);
+}
+
+.sticker-digit:nth-child(3) {
+  transform: rotate(-1deg);
+}
+
+.sticker-digit:nth-child(4) {
+  transform: rotate(3deg);
+}
+
+/* Typing Cursor */
+.cursor {
+  display: inline-block;
+  margin-left: 0.1em;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* Subtitle */
+.typo-subtitle {
+  font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  font-size: 3.5vw;
+  font-weight: 300;
+  color: #ffffff;
+  margin-top: 2rem;
+  letter-spacing: 0.03em;
+  align-self: flex-end;
+  text-align: right;
+  width: 100%;
+}
+
+/* CTA Button */
+.typo-cta {
+  position: fixed;
+  bottom: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1rem 3rem;
+  font-family: var(--font-primary);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #000000;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
+  z-index: 200;
+}
+
+.typo-cta:hover {
+  transform: translateX(-50%) translateY(-3px);
+  box-shadow: 0 6px 30px rgba(255, 255, 255, 0.4);
+  background-color: #f0f0f0;
+}
+
+.typo-cta:active {
+  transform: translateX(-50%) translateY(-1px);
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .typo-main {
+    font-size: 22vw;
+  }
+
+  .typo-subtitle {
+    font-size: 4vw;
+  }
+
+  .sticker-year {
+    height: 13.2vw;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .intro-page-typo {
+    padding: 1.5rem;
+  }
+
+  .typo-container {
+    max-width: 95vw;
+  }
+
+  .typo-main {
+    font-size: 24vw;
+    line-height: 0.9;
+  }
+
+  .typo-subtitle {
+    font-size: 4.5vw;
+    margin-top: 1.5rem;
+  }
+
+  .typo-cta {
+    padding: 0.9rem 2.5rem;
+    font-size: 1.1rem;
+    bottom: 6%;
+  }
+
+  .sticker-year {
+    height: 14.4vw;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .typo-main {
+    font-size: 26vw;
+  }
+
+  .typo-subtitle {
+    font-size: 5vw;
+  }
+
+  .typo-cta {
+    padding: 0.85rem 2.2rem;
+    font-size: 1rem;
+  }
+
+  .sticker-year {
+    height: 15.6vw;
+  }
+}
