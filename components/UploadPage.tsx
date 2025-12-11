@@ -12,6 +12,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPrivacyPopup, setShowPrivacyPopup] = useState(false);
+  const [hasExceeded50, setHasExceeded50] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -33,6 +34,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
       // Limit to 50 photos total
       setPhotos(prev => {
         const combined = [...prev, ...processedPhotos];
+        if (combined.length > 50) {
+          setHasExceeded50(true);
+        }
         return combined.slice(0, 50);
       });
       setIsProcessing(false);
@@ -45,7 +49,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
 
   const canAnalyze = photos.length >= 20 && photos.length <= 50;
   const tooFewPhotos = photos.length > 0 && photos.length < 20;
-  const tooManyPhotos = photos.length > 50;
+  const tooManyPhotos = hasExceeded50;
 
   return (
     <div className="h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -53,10 +57,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
       {/* Privacy Info Button - Bottom Left */}
       <button
         onClick={() => setShowPrivacyPopup(true)}
-        className="absolute bottom-6 left-6 p-2 hover:bg-white/10 rounded-full transition-colors z-50"
+        className="absolute bottom-6 left-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all hover:scale-110 z-50 border border-white/20"
         aria-label="Privacy Information"
       >
-        <HelpCircle size={24} className="text-gray-400" />
+        <HelpCircle size={28} className="text-white" strokeWidth={2} />
       </button>
 
       {/* Privacy Popup */}
@@ -73,30 +77,35 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
             />
 
             {/* Popup */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white text-black p-8 rounded-2xl shadow-2xl max-w-md w-[90%] z-[70]"
-            >
-              <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                  <HelpCircle size={24} className="text-green-600" />
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[70] pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white text-black p-6 md:p-8 rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto"
+              >
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <HelpCircle size={24} className="text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold">개인정보 보호</h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    업로드된 개인 정보와 사진들은<br />
+                    <span className="font-bold text-black">어디에도 저장되지 않습니다.</span>
+                  </p>
+                  <p className="text-gray-600 leading-relaxed">
+                    모든 분석은 브라우저에서 진행되며,<br />
+                    페이지를 닫으면 데이터가 완전히 삭제됩니다.
+                  </p>
+                  <button
+                    onClick={() => setShowPrivacyPopup(false)}
+                    className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors font-medium"
+                  >
+                    확인
+                  </button>
                 </div>
-                <h3 className="text-2xl font-bold">개인정보 보호</h3>
-                <p className="text-gray-600 leading-relaxed">
-                  업로드된 사진과 개인 정보는 <span className="font-bold text-black">어디에도 저장되지 않습니다.</span>
-                  <br /><br />
-                  모든 분석은 브라우저에서 진행되며, 페이지를 닫으면 데이터가 완전히 삭제됩니다.
-                </p>
-                <button
-                  onClick={() => setShowPrivacyPopup(false)}
-                  className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors font-medium"
-                >
-                  확인
-                </button>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -108,7 +117,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
           className="space-y-2 w-full"
         >
           {/* Updated Title: Capital M, Light font */}
-          <h2 className="text-4xl md:text-6xl font-light tracking-tight whitespace-nowrap">Upload 2025 Moments</h2>
+          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight whitespace-nowrap">Upload Your Moments</h2>
           <p className="text-gray-400">20~50장의 사진을 선택해주세요</p>
         </motion.div>
 
@@ -152,7 +161,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-2 rounded-lg text-sm"
             >
-              사진이 너무 적으면 분석이 어려울 수 있습니다. 20장 이상 선택해주세요.
+              분석하기 위해서는 20장 이상 선택해주세요.
             </motion.div>
           )}
           {tooManyPhotos && (

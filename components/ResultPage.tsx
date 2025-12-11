@@ -194,10 +194,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   }, [currentDetailIndex, detailPhotos, palette.colors]);
 
   return (
-    <div className="h-[100dvh] bg-gray-50 text-black p-2 md:p-4 flex flex-col items-center overflow-hidden">
+    <div className="h-[100dvh] bg-gray-50 text-black pt-6 md:pt-8 px-6 md:px-8 pb-3 md:pb-4 flex flex-col items-center overflow-hidden">
 
       {/* Action Bar */}
-      <div className="w-full max-w-6xl flex justify-between items-center mb-2 md:mb-4 z-50 shrink-0">
+      <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-6 z-50 shrink-0">
         <button onClick={onRetry} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
           <RefreshCw size={20} />
         </button>
@@ -207,10 +207,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         </button>
       </div>
 
-      {/* Main Content Area (Capture Target) - 80% height */}
+      {/* Main Content Area (Capture Target) - 75% height */}
       <div
         ref={captureRef}
-        className="w-full max-w-[1200px] h-[80%] bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate shrink-0"
+        className="w-full max-w-[1000px] h-[75%] bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate shrink-0"
       >
         {isDetailView ? (
           // --- Detail View Content ---
@@ -250,7 +250,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                           const currentPhoto = detailPhotos[currentDetailIndex];
                           const aspectRatio = imageAspectRatios[currentPhoto.id];
                           const isSquare = aspectRatio && aspectRatio >= 0.9 && aspectRatio <= 1.1;
-                          const maxSize = isSquare ? '95%' : '85%';
+                          const isLandscape = aspectRatio && aspectRatio > 1.1;
+
+                          // Square and landscape: 95%, Portrait: 85%
+                          const maxSize = (isSquare || isLandscape) ? '95%' : '85%';
 
                           return (
                               <motion.div
@@ -289,18 +292,20 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                 </div>
 
                 {/* Bottom Navigation Dots - Horizontal */}
-                <div className="flex gap-2 mt-4 z-20 max-w-full overflow-x-auto scrollbar-hide px-2">
-                     {detailPhotos.map((_, idx) => (
-                        <div
-                            key={idx}
-                            onClick={() => setCurrentDetailIndex(idx)}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
-                                idx === currentDetailIndex
-                                ? 'bg-black scale-150 ring-2 ring-gray-200'
-                                : 'bg-gray-300 hover:bg-gray-400'
-                            }`}
-                        />
-                     ))}
+                <div className="w-full flex justify-center mt-4 z-20 px-2">
+                     <div className="flex gap-2 max-w-full overflow-x-auto scrollbar-hide">
+                         {detailPhotos.map((_, idx) => (
+                            <div
+                                key={idx}
+                                onClick={() => setCurrentDetailIndex(idx)}
+                                className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
+                                    idx === currentDetailIndex
+                                    ? 'bg-black scale-150 ring-2 ring-gray-200'
+                                    : 'bg-gray-300 hover:bg-gray-400'
+                                }`}
+                            />
+                         ))}
+                     </div>
                 </div>
 
              </div>
@@ -376,8 +381,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         )}
       </div>
 
-      {/* View Toggle Button - Outside the capture card */}
-      <div className="mt-4 mb-2 z-50 shrink-0">
+      {/* View Toggle Button - Centered in remaining space */}
+      <div className="flex-1 flex items-center justify-center z-50">
         {!isDetailView ? (
           <button
               onClick={() => setIsDetailView(true)}
