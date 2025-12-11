@@ -102,10 +102,18 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   // Pre-calculate non-overlapping positions for collage
   const photoPositions = useMemo(() => {
     const positions: {top: number, left: number, width: number, height: number, rotation: number, zIndex: number}[] = [];
-    const containerAspect = 3/4; 
-    
-    // Size: ~20% width
-    const itemW = 20; 
+    const containerAspect = 3/4;
+
+    // Reactive size based on photo count (3 tiers)
+    // 10-15 photos: largest size (30% width)
+    // 16-20 photos: medium size (24% width)
+    // 20+ photos: standard size (20% width)
+    let itemW = 20; // default
+    if (displayPhotos.length <= 15) {
+      itemW = 30;
+    } else if (displayPhotos.length <= 20) {
+      itemW = 24;
+    }
     const itemH = itemW * containerAspect; 
 
     displayPhotos.forEach(() => {
@@ -324,7 +332,15 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                 {displayPhotos.map((photo, index) => {
                   const pos = photoPositions[index];
                   const dimmed = isDimmed(photo.id);
-                  
+
+                  // Calculate width based on photo count (3 tiers)
+                  let photoWidth = 20; // default
+                  if (displayPhotos.length <= 15) {
+                    photoWidth = 30;
+                  } else if (displayPhotos.length <= 20) {
+                    photoWidth = 24;
+                  }
+
                   return (
                     <motion.div
                       drag
@@ -338,7 +354,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                         left: `${pos.left}%`,
                         top: `${pos.top}%`,
                         rotate: pos.rotation,
-                        width: '20%', 
+                        width: `${photoWidth}%`, 
                         opacity: dimmed ? 0.1 : 1,
                         filter: dimmed ? 'grayscale(100%)' : 'none',
                         zIndex: dimmed ? 1 : pos.zIndex
