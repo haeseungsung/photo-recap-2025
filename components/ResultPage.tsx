@@ -228,54 +228,56 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
              </div>
 
              {/* BOTTOM: Main Photo Area */}
-             <div className="flex-1 relative bg-gray-50 flex items-center justify-center p-6 md:p-10 overflow-hidden">
-                <AnimatePresence mode="wait">
-                    {detailPhotos[currentDetailIndex] && (
-                        <motion.div
-                            key={detailPhotos[currentDetailIndex].id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 1.05 }}
-                            transition={{ duration: 0.4 }}
-                            className="w-full h-full flex items-center justify-center relative z-10"
-                        >
-                            <img 
-                                src={detailPhotos[currentDetailIndex].url} 
-                                alt="Detail" 
-                                className="max-w-full max-h-full object-contain shadow-xl"
-                            />
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+             <div className="flex-1 relative bg-gray-50 flex flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
+                <div className="flex-1 w-full flex items-center justify-center relative">
+                  <AnimatePresence mode="wait">
+                      {detailPhotos[currentDetailIndex] && (
+                          <motion.div
+                              key={detailPhotos[currentDetailIndex].id}
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 1.05 }}
+                              transition={{ duration: 0.4 }}
+                              className="w-full h-full flex items-center justify-center relative z-10"
+                          >
+                              <img
+                                  src={detailPhotos[currentDetailIndex].url}
+                                  alt="Detail"
+                                  className="max-w-full max-h-full object-contain shadow-xl"
+                              />
+                          </motion.div>
+                      )}
+                  </AnimatePresence>
 
-                {/* Right Side Navigation Dots */}
-                <div className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20 max-h-[60%] overflow-y-auto scrollbar-hide py-2">
+                  {/* Manual Navigation Buttons (Overlay) */}
+                  <button
+                      onClick={handlePrevDetailPhoto}
+                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/50 hover:bg-white text-black transition-colors z-20"
+                  >
+                      <ChevronLeft size={32} />
+                  </button>
+                  <button
+                      onClick={handleNextDetailPhoto}
+                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/50 hover:bg-white text-black transition-colors z-20"
+                  >
+                      <ChevronRight size={32} />
+                  </button>
+                </div>
+
+                {/* Bottom Navigation Dots - Horizontal */}
+                <div className="flex gap-2 mt-4 z-20 max-w-full overflow-x-auto scrollbar-hide px-2">
                      {detailPhotos.map((_, idx) => (
-                        <div 
+                        <div
                             key={idx}
                             onClick={() => setCurrentDetailIndex(idx)}
-                            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                                idx === currentDetailIndex 
-                                ? 'bg-black scale-150 ring-2 ring-gray-200' 
+                            className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
+                                idx === currentDetailIndex
+                                ? 'bg-black scale-150 ring-2 ring-gray-200'
                                 : 'bg-gray-300 hover:bg-gray-400'
                             }`}
                         />
                      ))}
                 </div>
-                
-                {/* Manual Navigation Buttons (Overlay) */}
-                <button 
-                    onClick={handlePrevDetailPhoto}
-                    className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/50 hover:bg-white text-black transition-colors z-20"
-                >
-                    <ChevronLeft size={32} />
-                </button>
-                 <button 
-                    onClick={handleNextDetailPhoto}
-                    className="absolute right-8 md:right-12 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/50 hover:bg-white text-black transition-colors z-20 md:hidden"
-                >
-                    <ChevronRight size={32} />
-                </button>
 
              </div>
           </div>
