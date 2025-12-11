@@ -229,7 +229,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
 
              {/* BOTTOM: Main Photo Area */}
              <div className="flex-1 relative bg-gray-50 flex flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
-                <div className="flex-1 w-full flex items-center justify-center relative">
+                <div className="flex-1 w-full flex items-center justify-center relative px-12">
                   <AnimatePresence mode="wait">
                       {detailPhotos[currentDetailIndex] && (
                           <motion.div
@@ -238,29 +238,30 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 1.05 }}
                               transition={{ duration: 0.4 }}
-                              className="w-full h-full flex items-center justify-center relative z-10"
+                              className="flex items-center justify-center relative z-10"
+                              style={{ maxWidth: '100%', maxHeight: '100%' }}
                           >
                               <img
                                   src={detailPhotos[currentDetailIndex].url}
                                   alt="Detail"
-                                  className="max-w-full max-h-full object-contain shadow-xl"
+                                  className="max-w-[85%] max-h-[85%] object-contain shadow-xl"
                               />
                           </motion.div>
                       )}
                   </AnimatePresence>
 
-                  {/* Manual Navigation Buttons (Overlay) */}
+                  {/* Modern Navigation Buttons - Minimal arrows */}
                   <button
                       onClick={handlePrevDetailPhoto}
-                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/50 hover:bg-white text-black transition-colors z-20"
+                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-black/5 rounded-md text-black/60 hover:text-black transition-all z-20"
                   >
-                      <ChevronLeft size={32} />
+                      <ChevronLeft size={20} strokeWidth={1.5} />
                   </button>
                   <button
                       onClick={handleNextDetailPhoto}
-                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/50 hover:bg-white text-black transition-colors z-20"
+                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-black/5 rounded-md text-black/60 hover:text-black transition-all z-20"
                   >
-                      <ChevronRight size={32} />
+                      <ChevronRight size={20} strokeWidth={1.5} />
                   </button>
                 </div>
 
