@@ -284,8 +284,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         ) : (
           // --- Collage View Content ---
           <>
-            {/* Collage Layer - 65% height */}
-            <div className="absolute inset-0 z-0 p-8">
+            {/* Collage Layer - reduced by 10% from bottom */}
+            <div className="absolute top-0 left-0 right-0 bottom-[10%] z-0 p-8">
               <div className="w-full h-[65%] relative">
                 {displayPhotos.map((photo, index) => {
                   const pos = photoPositions[index];
