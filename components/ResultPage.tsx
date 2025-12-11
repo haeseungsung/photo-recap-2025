@@ -93,9 +93,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
       let found = false;
       
       for (let attempt = 0; attempt < 200; attempt++) {
-        // STRICT CONSTRAINT: Top 33% (reduced by 15% more from 48%)
+        // STRICT CONSTRAINT: Top 60%
         const left = 2 + Math.random() * (96 - itemW);
-        const top = 2 + Math.random() * (33 - itemH);
+        const top = 2 + Math.random() * (60 - itemH);
         
         let valid = true;
         for (const p of positions) {
@@ -120,7 +120,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
       if (!found) {
          bestPos = {
              left: 2 + Math.random() * (96 - itemW),
-             top: 2 + Math.random() * (33 - itemH)
+             top: 2 + Math.random() * (60 - itemH)
          };
       }
 
@@ -284,9 +284,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         ) : (
           // --- Collage View Content ---
           <>
-            {/* Collage Layer */}
+            {/* Collage Layer - 85% height */}
             <div className="absolute inset-0 z-0 p-8">
-              <div className="w-full h-full relative">
+              <div className="w-full h-[85%] relative">
                 {displayPhotos.map((photo, index) => {
                   const pos = photoPositions[index];
                   const dimmed = isDimmed(photo.id);
