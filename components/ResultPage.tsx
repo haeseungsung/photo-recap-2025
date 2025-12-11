@@ -15,7 +15,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   const [activeColor, setActiveColor] = useState<ColorData | null>(null);
   const [isDetailView, setIsDetailView] = useState(false);
   const [currentDetailIndex, setCurrentDetailIndex] = useState(0);
-  
+  const [imageAspectRatios, setImageAspectRatios] = useState<{[key: string]: number}>({});
+
   const captureRef = useRef<HTMLDivElement>(null);
 
   // Use only 50% of photos for the collage
@@ -41,6 +42,20 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         setCurrentDetailIndex(0);
     }
   }, [isDetailView]);
+
+  // Load image aspect ratios
+  useEffect(() => {
+    detailPhotos.forEach(photo => {
+      if (!imageAspectRatios[photo.id]) {
+        const img = new Image();
+        img.onload = () => {
+          const aspectRatio = img.naturalWidth / img.naturalHeight;
+          setImageAspectRatios(prev => ({ ...prev, [photo.id]: aspectRatio }));
+        };
+        img.src = photo.url;
+      }
+    });
+  }, [detailPhotos]);
 
   const handleShare = async () => {
     if (captureRef.current) {
@@ -231,23 +246,31 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
              <div className="flex-1 relative bg-gray-50 flex flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
                 <div className="flex-1 w-full flex items-center justify-center relative px-12">
                   <AnimatePresence mode="wait">
-                      {detailPhotos[currentDetailIndex] && (
-                          <motion.div
-                              key={detailPhotos[currentDetailIndex].id}
-                              initial={{ opacity: 0, scale: 0.95 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 1.05 }}
-                              transition={{ duration: 0.4 }}
-                              className="flex items-center justify-center relative z-10"
-                              style={{ maxWidth: '100%', maxHeight: '100%' }}
-                          >
-                              <img
-                                  src={detailPhotos[currentDetailIndex].url}
-                                  alt="Detail"
-                                  className="max-w-[85%] max-h-[85%] object-contain shadow-xl"
-                              />
-                          </motion.div>
-                      )}
+                      {detailPhotos[currentDetailIndex] && (() => {
+                          const currentPhoto = detailPhotos[currentDetailIndex];
+                          const aspectRatio = imageAspectRatios[currentPhoto.id];
+                          const isSquare = aspectRatio && aspectRatio >= 0.9 && aspectRatio <= 1.1;
+                          const maxSize = isSquare ? '95%' : '85%';
+
+                          return (
+                              <motion.div
+                                  key={currentPhoto.id}
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  exit={{ opacity: 0, scale: 1.05 }}
+                                  transition={{ duration: 0.4 }}
+                                  className="flex items-center justify-center relative z-10"
+                                  style={{ maxWidth: '100%', maxHeight: '100%' }}
+                              >
+                                  <img
+                                      src={currentPhoto.url}
+                                      alt="Detail"
+                                      className="object-contain shadow-xl"
+                                      style={{ maxWidth: maxSize, maxHeight: maxSize }}
+                                  />
+                              </motion.div>
+                          );
+                      })()}
                   </AnimatePresence>
 
                   {/* Modern Navigation Buttons - Minimal arrows */}

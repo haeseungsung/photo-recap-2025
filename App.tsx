@@ -24,11 +24,11 @@ const App: React.FC = () => {
       const paletteColors = generatePaletteFromColors(allColors, 5);
 
       // 3. Get Creative Title from Gemini
-      // Artificial delay to ensure the loading animation plays at least a bit for "Vibing"
+      // Artificial delay to ensure the loading animation completes (matches progress bar duration)
       const [aiResult] = await Promise.all([
         analyzePaletteWithGemini(paletteColors),
-        // Reduce delay to 3 seconds as requested
-        new Promise(resolve => setTimeout(resolve, 3000))
+        // Wait 4.5 seconds to match progress bar animation
+        new Promise(resolve => setTimeout(resolve, 4500))
       ]);
 
       setResult({
