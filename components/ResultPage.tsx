@@ -93,9 +93,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
       let found = false;
       
       for (let attempt = 0; attempt < 200; attempt++) {
-        // STRICT CONSTRAINT: Top 60%
+        // STRICT CONSTRAINT: Top 48% (reduced by 20% from 60%)
         const left = 2 + Math.random() * (96 - itemW);
-        const top = 2 + Math.random() * (60 - itemH);
+        const top = 2 + Math.random() * (48 - itemH);
         
         let valid = true;
         for (const p of positions) {
@@ -118,9 +118,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
       }
 
       if (!found) {
-         bestPos = { 
-             left: 2 + Math.random() * (96 - itemW), 
-             top: 2 + Math.random() * (60 - itemH) 
+         bestPos = {
+             left: 2 + Math.random() * (96 - itemW),
+             top: 2 + Math.random() * (48 - itemH)
          };
       }
 
@@ -192,15 +192,15 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         </button>
       </div>
 
-      {/* Main Content Area (Capture Target) */}
+      {/* Main Content Area (Capture Target) - 80% height */}
       <div
         ref={captureRef}
-        className="w-full max-w-[1200px] flex-1 bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate"
+        className="w-full max-w-[1200px] h-[80%] bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate shrink-0"
       >
         {isDetailView ? (
           // --- Detail View Content ---
           <div className="absolute inset-0 z-50 bg-white flex flex-col">
-             
+
              {/* TOP: Palette Row */}
              <div className="w-full h-[140px] bg-white border-b border-gray-100 flex items-center justify-center gap-2 md:gap-4 px-4 shrink-0 z-20">
                 {palette.colors.map((color, idx) => {
@@ -348,24 +348,25 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
             </div>
           </>
         )}
-        {/* View Toggle Button - Inside the card */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50">
-          {!isDetailView ? (
-            <button
-                onClick={() => setIsDetailView(true)}
-                className="bg-black text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
-            >
-                팔레트 자세히 보기
-            </button>
-          ) : (
-            <button
-                onClick={() => setIsDetailView(false)}
-                className="bg-black text-white px-6 py-3 rounded-full text-sm font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
-            >
-                돌아가기
-            </button>
-          )}
-        </div>
+      </div>
+
+      {/* View Toggle Button - Outside the capture card */}
+      <div className="mt-4 mb-2 z-50 shrink-0">
+        {!isDetailView ? (
+          <button
+              onClick={() => setIsDetailView(true)}
+              className="bg-black text-white px-8 py-3 rounded-full text-base font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
+          >
+              팔레트 자세히 보기
+          </button>
+        ) : (
+          <button
+              onClick={() => setIsDetailView(false)}
+              className="bg-black text-white px-8 py-3 rounded-full text-base font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
+          >
+              돌아가기
+          </button>
+        )}
       </div>
 
     </div>
