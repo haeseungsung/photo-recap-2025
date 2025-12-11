@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { Upload, X, ArrowRight, HelpCircle } from 'lucide-react';
 import { PhotoData } from '../types';
 import { getDominantColor } from '../utils/colorUtils';
@@ -13,6 +13,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPrivacyPopup, setShowPrivacyPopup] = useState(false);
   const [hasExceeded50, setHasExceeded50] = useState(false);
+  const [privacyPopupSource, setPrivacyPopupSource] = useState<'help' | 'upload'>('help');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -56,7 +58,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
 
       {/* Privacy Info Button - Bottom Left */}
       <button
-        onClick={() => setShowPrivacyPopup(true)}
+        onClick={() => {
+          setPrivacyPopupSource('help');
+          setShowPrivacyPopup(true);
+        }}
         className="absolute bottom-6 left-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all hover:scale-110 z-50 border border-white/20"
         aria-label="Privacy Information"
       >
@@ -97,8 +102,22 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
                     모든 분석은 브라우저에서 진행되며,<br />
                     페이지를 닫으면 데이터가 완전히 삭제됩니다.
                   </p>
+                  {privacyPopupSource === 'upload' && (
+                    <p className="text-green-600 font-medium leading-relaxed">
+                      분석을 위해 10장 이상의 사진을<br />
+                      선택해주세요.
+                    </p>
+                  )}
                   <button
-                    onClick={() => setShowPrivacyPopup(false)}
+                    onClick={() => {
+                      setShowPrivacyPopup(false);
+                      // If opened from upload button, trigger file selection
+                      if (privacyPopupSource === 'upload') {
+                        setTimeout(() => {
+                          fileInputRef.current?.click();
+                        }, 100);
+                      }
+                    }}
                     className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors font-medium"
                   >
                     확인
@@ -118,23 +137,29 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
         >
           {/* Updated Title: Capital M, Light font */}
           <h2 className="text-3xl md:text-5xl font-semibold tracking-tight whitespace-nowrap">Upload Your Moments</h2>
-          <p className="text-gray-400">20~50장의 사진을 선택해주세요</p>
         </motion.div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
           className="w-full flex justify-center"
         >
-            <label className="group cursor-pointer relative">
-              <input 
-                type="file" 
-                multiple 
-                accept="image/*" 
-                onChange={handleFileChange}
-                className="hidden"
-              />
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              onClick={() => {
+                setPrivacyPopupSource('upload');
+                setShowPrivacyPopup(true);
+              }}
+              className="group cursor-pointer relative"
+            >
               <div className="bg-white text-black px-12 py-4 rounded-full text-lg font-semibold shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all flex items-center gap-2">
                 {isProcessing ? (
                   <span className="animate-pulse">처리중...</span>
@@ -145,7 +170,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
                   </>
                 )}
               </div>
-            </label>
+            </button>
         </motion.div>
 
         <div className="text-sm text-gray-500 font-mono">
