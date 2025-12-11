@@ -19,8 +19,13 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
 
   const captureRef = useRef<HTMLDivElement>(null);
 
-  // Use only 50% of photos for the collage
-  const displayPhotos = useMemo(() => photos.slice(0, Math.ceil(photos.length * 0.5)), [photos]);
+  // Use only 50% of photos for the collage if 20+, otherwise use all photos
+  const displayPhotos = useMemo(() => {
+    if (photos.length < 20) {
+      return photos; // Show all photos for less than 20
+    }
+    return photos.slice(0, Math.ceil(photos.length * 0.5)); // Show 50% for 20+
+  }, [photos]);
 
   // Filter photos for Detail View:
   // Only include photos that have a "close" connection (Delta E < 45) to at least one palette color.

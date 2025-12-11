@@ -47,8 +47,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
     setPhotos(prev => prev.filter(p => p.id !== id));
   };
 
-  const canAnalyze = photos.length >= 20 && photos.length <= 50;
-  const tooFewPhotos = photos.length > 0 && photos.length < 20;
+  const canAnalyze = photos.length >= 10 && photos.length <= 50;
+  const tooFewPhotos = photos.length > 0 && photos.length < 10;
   const tooManyPhotos = hasExceeded50;
 
   return (
@@ -161,7 +161,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-2 rounded-lg text-sm"
             >
-              분석하기 위해서는 20장 이상 선택해주세요.
+              분석하기 위해서는 10장 이상 선택해주세요.
             </motion.div>
           )}
           {tooManyPhotos && (
