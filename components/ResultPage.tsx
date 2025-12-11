@@ -207,10 +207,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   }, [currentDetailIndex, detailPhotos, palette.colors]);
 
   return (
-    <div className="h-[100dvh] bg-gray-50 text-black pt-6 md:pt-8 px-6 md:px-8 pb-3 md:pb-4 flex flex-col items-center overflow-hidden">
+    <div className="h-[100dvh] bg-gray-50 md:bg-white text-black pt-6 md:pt-0 px-6 md:px-0 pb-3 md:pb-0 flex flex-col items-center overflow-hidden relative">
 
       {/* Action Bar */}
-      <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-6 z-50 shrink-0">
+      <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-0 md:absolute md:top-8 md:left-8 md:right-8 z-50 shrink-0">
         <button onClick={onRetry} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
           <RefreshCw size={20} />
         </button>
@@ -220,10 +220,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         </button>
       </div>
 
-      {/* Main Content Area (Capture Target) - 75% height */}
+      {/* Main Content Area (Capture Target) */}
       <div
         ref={captureRef}
-        className="w-full max-w-[1000px] h-[75%] bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl border border-gray-100 isolate shrink-0"
+        className="w-full max-w-[1000px] md:max-w-none h-[75%] md:h-full bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl md:shadow-none border border-gray-100 md:border-none isolate shrink-0 md:shrink"
       >
         {isDetailView ? (
           // --- Detail View Content ---
@@ -266,7 +266,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                           const isLandscape = aspectRatio && aspectRatio > 1.1;
 
                           // Square and landscape: 95%, Portrait: 85%
-                          const maxSize = (isSquare || isLandscape) ? '95%' : '85%';
+                          let maxSize = (isSquare || isLandscape) ? '95%' : '85%';
 
                           return (
                               <motion.div
@@ -281,8 +281,11 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                                   <img
                                       src={currentPhoto.url}
                                       alt="Detail"
-                                      className="object-contain shadow-xl"
-                                      style={{ maxWidth: maxSize, maxHeight: maxSize }}
+                                      className="object-contain shadow-xl md:scale-[0.5]"
+                                      style={{
+                                        maxWidth: maxSize,
+                                        maxHeight: maxSize
+                                      }}
                                   />
                               </motion.div>
                           );
@@ -354,13 +357,13 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                         left: `${pos.left}%`,
                         top: `${pos.top}%`,
                         rotate: pos.rotation,
-                        width: `${photoWidth}%`, 
+                        width: `${photoWidth}%`,
                         opacity: dimmed ? 0.1 : 1,
                         filter: dimmed ? 'grayscale(100%)' : 'none',
                         zIndex: dimmed ? 1 : pos.zIndex
                       }}
                     >
-                      <div className="bg-white p-1 shadow-sm">
+                      <div className="bg-white p-1 shadow-sm md:scale-[0.7] md:origin-center">
                          <img src={photo.url} alt="" className="w-full h-auto pointer-events-none select-none block" />
                       </div>
                     </motion.div>
@@ -370,8 +373,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
             </div>
 
             {/* Palette & Info Section - Left Aligned (Safe Zone Protected) */}
-            <div className="z-30 relative mt-auto flex flex-col items-start w-full p-8 md:p-12 bg-transparent pointer-events-none select-none">
-                
+            <div className="z-30 absolute bottom-8 left-8 md:left-12 md:bottom-12 flex flex-col items-start bg-transparent pointer-events-none select-none">
+
                 {/* Title & Tags */}
                 <div className="mb-6 text-left pointer-events-auto">
                     <h2 className="text-3xl md:text-5xl font-light text-black mb-3 tracking-tight leading-tight">
@@ -402,8 +405,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         )}
       </div>
 
-      {/* View Toggle Button - Centered in remaining space */}
-      <div className="flex-1 flex items-center justify-center z-50">
+      {/* View Toggle Button - Mobile: centered, Desktop: bottom-right */}
+      <div className="flex-1 md:flex-none md:absolute md:bottom-12 md:right-12 flex items-center justify-center z-50">
         {!isDetailView ? (
           <button
               onClick={() => setIsDetailView(true)}
