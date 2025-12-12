@@ -39,9 +39,10 @@ const App: React.FC = () => {
 
       setAppState(AppState.RESULT);
     } catch (error) {
-      console.error("Analysis failed", error);
-      // Fallback or error state could go here, for now restart
-      setAppState(AppState.INTRO);
+      console.error("Analysis failed:", error);
+      alert("분석 중 오류가 발생했습니다. 다시 시도해주세요.\n\n오류: " + (error instanceof Error ? error.message : String(error)));
+      // Return to upload page instead of intro, so user doesn't lose their photos
+      setAppState(AppState.UPLOAD);
     }
   };
 

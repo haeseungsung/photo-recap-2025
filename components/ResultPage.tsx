@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { PhotoData, PaletteResult, ColorData } from '../types';
 import { colorDistance } from '../utils/colorUtils';
 import html2canvas from 'html2canvas';
-import { RefreshCw, Share2, ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
+import { RefreshCw, Share2, ChevronDown, ChevronRight, ChevronLeft, Edit2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ResultPageProps {
@@ -16,16 +16,25 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   const [isDetailView, setIsDetailView] = useState(false);
   const [currentDetailIndex, setCurrentDetailIndex] = useState(0);
   const [imageAspectRatios, setImageAspectRatios] = useState<{[key: string]: number}>({});
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(palette.title);
 
   const captureRef = useRef<HTMLDivElement>(null);
 
-  // Use only 50% of photos for the collage if 20+, otherwise use all photos
+  // Select best 9 photos based on closest color distance to palette
   const displayPhotos = useMemo(() => {
-    if (photos.length < 20) {
-      return photos; // Show all photos for less than 20
-    }
-    return photos.slice(0, Math.ceil(photos.length * 0.5)); // Show 50% for 20+
-  }, [photos]);
+    // Calculate the minimum distance from each photo to any palette color
+    const photosWithDistance = photos.map(photo => {
+      const minDistance = Math.min(
+        ...palette.colors.map(color => colorDistance(photo.dominantColor, color))
+      );
+      return { photo, minDistance };
+    });
+
+    // Sort by distance (closest first) and take top 9
+    photosWithDistance.sort((a, b) => a.minDistance - b.minDistance);
+    return photosWithDistance.slice(0, 9).map(item => item.photo);
+  }, [photos, palette.colors]);
 
   // Filter photos for Detail View:
   // Only include photos that have a "close" connection (Delta E < 45) to at least one palette color.
@@ -98,71 +107,6 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
     if (!activeColor) return false;
     return !highlightedIds.has(id);
   };
-
-  // Pre-calculate non-overlapping positions for collage
-  const photoPositions = useMemo(() => {
-    const positions: {top: number, left: number, width: number, height: number, rotation: number, zIndex: number}[] = [];
-    const containerAspect = 3/4;
-
-    // Reactive size based on photo count (3 tiers)
-    // 10-15 photos: largest size (30% width)
-    // 16-20 photos: medium size (24% width)
-    // 20+ photos: standard size (20% width)
-    let itemW = 20; // default
-    if (displayPhotos.length <= 15) {
-      itemW = 30;
-    } else if (displayPhotos.length <= 20) {
-      itemW = 24;
-    }
-    const itemH = itemW * containerAspect; 
-
-    displayPhotos.forEach(() => {
-      let bestPos = { top: 0, left: 0 };
-      let found = false;
-      
-      for (let attempt = 0; attempt < 200; attempt++) {
-        // Evenly distribute across entire container (100%)
-        const left = 2 + Math.random() * (96 - itemW);
-        const top = 2 + Math.random() * (96 - itemH);
-        
-        let valid = true;
-        for (const p of positions) {
-            const xOverlap = Math.max(0, Math.min(left + itemW, p.left + itemW) - Math.max(left, p.left));
-            const yOverlap = Math.max(0, Math.min(top + itemH, p.top + itemH) - Math.max(top, p.top));
-            const overlapArea = xOverlap * yOverlap;
-            const itemArea = itemW * itemH;
-            
-            if (overlapArea > (itemArea * 0.2)) {
-                valid = false;
-                break;
-            }
-        }
-
-        if (valid) {
-            bestPos = { top, left };
-            found = true;
-            break;
-        }
-      }
-
-      if (!found) {
-         bestPos = {
-             left: 2 + Math.random() * (96 - itemW),
-             top: 2 + Math.random() * (96 - itemH)
-         };
-      }
-
-      positions.push({
-        ...bestPos,
-        width: itemW,
-        height: itemH,
-        rotation: (Math.random() * 30) - 15,
-        zIndex: Math.floor(Math.random() * 20) + 10
-      });
-    });
-
-    return positions;
-  }, [displayPhotos]);
 
   // --- Detail View Logic ---
   
@@ -327,45 +271,30 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
              </div>
           </div>
         ) : (
-          // --- Collage View Content ---
+          // --- Instagram 3x3 Grid View ---
           <>
-            {/* Collage Layer - reduced by 10% from bottom */}
-            <div className="absolute top-0 left-0 right-0 bottom-[10%] z-0 p-8">
-              <div className="w-full h-[65%] relative">
+            {/* 3x3 Grid Container */}
+            <div className="absolute inset-0 z-0 flex items-start justify-center pt-4 md:pt-6 p-4 md:p-8">
+              <div className="w-full max-w-[600px] aspect-square grid grid-cols-3 gap-1 md:gap-2">
                 {displayPhotos.map((photo, index) => {
-                  const pos = photoPositions[index];
                   const dimmed = isDimmed(photo.id);
-
-                  // Calculate width based on photo count (3 tiers)
-                  let photoWidth = 20; // default
-                  if (displayPhotos.length <= 15) {
-                    photoWidth = 30;
-                  } else if (displayPhotos.length <= 20) {
-                    photoWidth = 24;
-                  }
 
                   return (
                     <motion.div
-                      drag
-                      dragMomentum={false}
-                      dragConstraints={captureRef}
                       key={photo.id}
-                      whileHover={{ scale: 1.1, zIndex: 100 }}
-                      whileDrag={{ scale: 1.1, zIndex: 100, cursor: 'grabbing' }}
-                      className="absolute shadow-sm cursor-grab active:cursor-grabbing pointer-events-auto"
-                      style={{
-                        left: `${pos.left}%`,
-                        top: `${pos.top}%`,
-                        rotate: pos.rotation,
-                        width: `${photoWidth}%`,
-                        opacity: dimmed ? 0.1 : 1,
-                        filter: dimmed ? 'grayscale(100%)' : 'none',
-                        zIndex: dimmed ? 1 : pos.zIndex
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{
+                        opacity: dimmed ? 0.15 : 1,
+                        scale: 1
                       }}
+                      transition={{ delay: index * 0.05 }}
+                      className="relative w-full h-full bg-gray-100 overflow-hidden"
                     >
-                      <div className="bg-white p-1 shadow-sm md:scale-[0.6] md:origin-center">
-                         <img src={photo.url} alt="" className="w-full h-auto pointer-events-none select-none block" />
-                      </div>
+                      <img
+                        src={photo.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </motion.div>
                   );
                 })}
@@ -373,18 +302,37 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
             </div>
 
             {/* Palette & Info Section - Left Aligned (Safe Zone Protected) */}
-            <div className="z-30 absolute bottom-8 left-8 md:left-12 md:bottom-12 flex flex-col items-start bg-transparent pointer-events-none select-none">
+            <div className="z-30 absolute bottom-4 left-4 md:left-6 md:bottom-6 flex flex-col items-start bg-transparent pointer-events-none select-none">
 
-                {/* Title & Tags */}
-                <div className="mb-6 text-left pointer-events-auto">
-                    <h2 className="text-3xl md:text-5xl font-light text-black mb-3 tracking-tight leading-tight">
-                        {palette.title}
-                    </h2>
-                    <div className="flex flex-wrap gap-3 text-gray-500 text-sm font-light tracking-wide">
-                        {palette.hashtags.map(tag => (
-                            <span key={tag} className="">{tag}</span>
-                        ))}
-                    </div>
+                {/* Title */}
+                <div className="mb-4 text-left pointer-events-auto flex items-center gap-2 group">
+                    {isEditingTitle ? (
+                        <input
+                            type="text"
+                            value={editedTitle}
+                            onChange={(e) => setEditedTitle(e.target.value)}
+                            onBlur={() => setIsEditingTitle(false)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    setIsEditingTitle(false);
+                                }
+                            }}
+                            autoFocus
+                            className="text-2xl md:text-4xl font-light text-black tracking-tight leading-tight bg-transparent border-b-2 border-black focus:outline-none"
+                        />
+                    ) : (
+                        <>
+                            <h2 className="text-2xl md:text-4xl font-light text-black tracking-tight leading-tight">
+                                {editedTitle}
+                            </h2>
+                            <button
+                                onClick={() => setIsEditingTitle(true)}
+                                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                                <Edit2 size={18} className="text-gray-600" />
+                            </button>
+                        </>
+                    )}
                 </div>
 
                 {/* Color Swatches */}

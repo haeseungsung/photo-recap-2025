@@ -71,21 +71,22 @@ export const getDominantColor = (imageSrc: string): Promise<ColorData> => {
         reject("Could not get canvas context");
         return;
       }
-      
-      // Resize to moderate size for analysis
-      canvas.width = 100;
-      canvas.height = 100;
-      ctx.drawImage(img, 0, 0, 100, 100);
-      
-      const imageData = ctx.getImageData(0, 0, 100, 100).data;
-      
+
+      // OPTIMIZATION: Smaller canvas for faster processing
+      canvas.width = 50;
+      canvas.height = 50;
+      ctx.drawImage(img, 0, 0, 50, 50);
+
+      const imageData = ctx.getImageData(0, 0, 50, 50).data;
+
       // Histogram approach: Quantize colors and count
       const colorCounts: {[key: string]: {count: number, r: number, g: number, b: number}} = {};
       const quantization = 16; // Group similar colors
 
-      for (let i = 0; i < imageData.length; i += 4) {
+      // OPTIMIZATION: Sample every other pixel (50% faster)
+      for (let i = 0; i < imageData.length; i += 8) {
         if (imageData[i + 3] < 128) continue; // Skip transparent
-        
+
         const r = imageData[i];
         const g = imageData[i + 1];
         const b = imageData[i + 2];
@@ -93,9 +94,9 @@ export const getDominantColor = (imageSrc: string): Promise<ColorData> => {
         const rQ = Math.round(r / quantization) * quantization;
         const gQ = Math.round(g / quantization) * quantization;
         const bQ = Math.round(b / quantization) * quantization;
-        
+
         const key = `${rQ},${gQ},${bQ}`;
-        
+
         if (!colorCounts[key]) {
             colorCounts[key] = { count: 0, r: 0, g: 0, b: 0 };
         }
@@ -114,20 +115,27 @@ export const getDominantColor = (imageSrc: string): Promise<ColorData> => {
         const avgB = Math.round(bucket.b / bucket.count);
         
         const [h, s, l] = rgbToHsl(avgR, avgG, avgB);
-        
+
         // Scoring Algorithm to favor Vibrant Colors:
         // 1. Base score is frequency (count)
         // 2. Bonus for higher saturation (prevents gray/muddy colors from winning just because they are common background)
-        // 3. Penalty for extreme lightness/darkness (unless very frequent)
-        
-        let score = bucket.count;
-        
-        // Boost saturation: up to 2x score for fully saturated colors
-        score *= (1 + s); 
+        // 3. Bonus for green hues (nature colors: trees, grass, landscapes)
+        // 4. Penalty for extreme lightness/darkness (unless very frequent)
 
-        // Slight penalty for very dark (< 10%) or very bright (> 95%) pixels 
+        let score = bucket.count;
+
+        // Boost saturation: up to 2x score for fully saturated colors
+        score *= (1 + s);
+
+        // Bonus for green/nature colors (Hue 80-160 degrees = yellowy-green to cyan-green)
+        // This helps capture natural greens from trees, grass, and landscapes
+        if (h >= 80/360 && h <= 160/360) {
+          score *= 1.3; // 30% bonus for green hues
+        }
+
+        // Slight penalty for very dark (< 5%) or very bright (> 98%) pixels
         // as they are often shadows or highlights, not the "color"
-        if (l < 0.1 || l > 0.95) score *= 0.6;
+        if (l < 0.05 || l > 0.98) score *= 0.6;
 
         if (score > maxScore) {
           maxScore = score;
@@ -146,12 +154,11 @@ export const getDominantColor = (imageSrc: string): Promise<ColorData> => {
   });
 };
 
-// Improved Clustering
+// Improved Clustering with Hue Diversity
 export const generatePaletteFromColors = (colors: ColorData[], k: number = 5): ColorData[] => {
   if (colors.length === 0) return [];
-  
+
   // 1. Filter out duplicates or extremely similar colors using Delta E
-  // Threshold of ~8-10 Delta E usually means colors are visually distinct enough
   const distinctColors: ColorData[] = [];
   colors.forEach(c => {
     const isSimilar = distinctColors.some(existing => colorDistance(c, existing) < 10);
@@ -160,27 +167,47 @@ export const generatePaletteFromColors = (colors: ColorData[], k: number = 5): C
     }
   });
 
-  // If we have fewer distinct colors than k, return what we have (or maybe fill with complementary? keeping it simple for now)
   if (distinctColors.length <= k) return distinctColors;
 
-  // 2. K-means++ Initialization
-  // Pick first centroid randomly
-  let centroids = [distinctColors[Math.floor(Math.random() * distinctColors.length)]];
-  
-  // Pick remaining centroids that are furthest from existing centroids
-  for (let i = 1; i < k; i++) {
-    let maxDist = -1;
-    let nextCentroid = distinctColors[0];
+  // 2. Hue-based diverse initialization
+  // Convert colors to HSL and group by hue regions
+  const colorsWithHsl = distinctColors.map(c => {
+    const [h, s, l] = rgbToHsl(c.r, c.g, c.b);
+    return { color: c, h, s, l };
+  });
 
-    distinctColors.forEach(c => {
-        // Distance to closest existing centroid
-        const minDistToCentroids = Math.min(...centroids.map(cent => colorDistance(c, cent)));
-        if (minDistToCentroids > maxDist) {
-            maxDist = minDistToCentroids;
-            nextCentroid = c;
-        }
+  // Sort by hue to spread across color wheel
+  colorsWithHsl.sort((a, b) => a.h - b.h);
+
+  // Pick centroids spread across hue spectrum
+  let centroids: ColorData[] = [];
+  const hueStep = 1.0 / k; // Divide hue wheel into k segments
+
+  for (let i = 0; i < k; i++) {
+    const targetHue = i * hueStep;
+
+    // Find color closest to target hue with decent saturation
+    let bestColor = colorsWithHsl[0].color;
+    let bestScore = -1;
+
+    colorsWithHsl.forEach(({ color, h, s, l }) => {
+      // Hue distance (circular)
+      let hueDist = Math.abs(h - targetHue);
+      if (hueDist > 0.5) hueDist = 1.0 - hueDist;
+
+      // Prefer colors with good saturation and not too dark/bright
+      const saturationBonus = s;
+      const lightnessBonus = (l > 0.2 && l < 0.8) ? 1.0 : 0.5;
+
+      const score = (1.0 - hueDist) * saturationBonus * lightnessBonus;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestColor = color;
+      }
     });
-    centroids.push(nextCentroid);
+
+    centroids.push(bestColor);
   }
 
   // 3. K-means Iteration (Standard)

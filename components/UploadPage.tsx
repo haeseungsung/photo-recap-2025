@@ -3,10 +3,49 @@ import { Upload, X, ArrowRight, HelpCircle } from 'lucide-react';
 import { PhotoData } from '../types';
 import { getDominantColor } from '../utils/colorUtils';
 import { motion, AnimatePresence } from 'framer-motion';
+import heic2any from 'heic2any';
 
 interface UploadPageProps {
   onAnalyze: (photos: PhotoData[]) => void;
 }
+
+// Helper function to resize images
+const resizeImage = (file: File, maxWidth: number): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject('Failed to get canvas context');
+        return;
+      }
+
+      let width = img.width;
+      let height = img.height;
+
+      // Only resize if image is larger than maxWidth
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(blob);
+        } else {
+          reject('Failed to create blob');
+        }
+      }, file.type || 'image/jpeg', 0.85); // 85% quality
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+};
 
 export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
@@ -22,17 +61,46 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
       const newFiles = Array.from(e.target.files) as File[];
 
       const newPhotosPromises = newFiles.map(async (file) => {
-        const url = URL.createObjectURL(file);
-        const dominantColor = await getDominantColor(url);
-        return {
-          id: Math.random().toString(36).substring(7),
-          file,
-          url,
-          dominantColor
-        };
+        try {
+          let processedFile = file;
+
+          // Convert HEIC to JPEG if needed
+          if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+            try {
+              const convertedBlob = await heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.8 // Reduced quality for memory optimization
+              });
+              // heic2any can return Blob or Blob[], handle both cases
+              const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+              processedFile = new File([blob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+            } catch (error) {
+              console.error('HEIC conversion failed for', file.name, ':', error);
+              // If conversion fails, skip this file
+              return null;
+            }
+          }
+
+          // OPTIMIZATION: Resize large images to save memory
+          const resizedBlob = await resizeImage(processedFile, 1920); // Max 1920px width
+          const resizedFile = new File([resizedBlob], processedFile.name, { type: processedFile.type });
+
+          const url = URL.createObjectURL(resizedFile);
+          const dominantColor = await getDominantColor(url);
+          return {
+            id: Math.random().toString(36).substring(7),
+            file: resizedFile,
+            url,
+            dominantColor
+          };
+        } catch (error) {
+          console.error('Failed to process image', file.name, ':', error);
+          return null;
+        }
       });
 
-      const processedPhotos = await Promise.all(newPhotosPromises);
+      const processedPhotos = (await Promise.all(newPhotosPromises)).filter((p): p is PhotoData => p !== null);
       // Limit to 50 photos total
       setPhotos(prev => {
         const combined = [...prev, ...processedPhotos];
@@ -49,8 +117,8 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
     setPhotos(prev => prev.filter(p => p.id !== id));
   };
 
-  const canAnalyze = photos.length >= 10 && photos.length <= 50;
-  const tooFewPhotos = photos.length > 0 && photos.length < 10;
+  const canAnalyze = photos.length >= 9 && photos.length <= 50;
+  const tooFewPhotos = photos.length > 0 && photos.length < 9;
   const tooManyPhotos = hasExceeded50;
 
   return (
@@ -104,7 +172,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
                   </p>
                   {privacyPopupSource === 'upload' && (
                     <p className="text-green-600 font-medium leading-relaxed">
-                      분석을 위해 10장 이상의 사진을<br />
+                      분석을 위해 9장 이상의 사진을<br />
                       선택해주세요.
                     </p>
                   )}
@@ -149,7 +217,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*"
+              accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/*"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -186,7 +254,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
               exit={{ opacity: 0, y: -10 }}
               className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-2 rounded-lg text-sm"
             >
-              분석하기 위해서는 10장 이상 선택해주세요.
+              분석하기 위해서는 9장 이상 선택해주세요.
             </motion.div>
           )}
           {tooManyPhotos && (

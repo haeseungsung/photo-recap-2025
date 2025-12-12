@@ -88,33 +88,25 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
     setCards(newCards);
   }, []);
 
-  const removeCard = (id: string) => {
-    setCards(prev => prev.filter(c => c.id !== id));
-  };
-
   return (
     <div className="relative w-full h-[100dvh] bg-[#FDFDFD] overflow-hidden flex flex-col items-center justify-center" ref={containerRef}>
-      
+
       {/* Background Scattered Cards */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <AnimatePresence>
           {cards.map((card, i) => (
             <motion.div
               key={card.id}
-              className="absolute w-40 h-24 bg-white shadow-lg flex flex-col pointer-events-auto cursor-pointer"
+              className="absolute w-40 h-24 bg-white shadow-lg flex flex-col"
               initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ 
-                opacity: 1, 
+              animate={{
+                opacity: 1,
                 scale: 1,
                 x: card.x,
                 y: card.y,
                 rotate: card.rot
               }}
-              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
               transition={{ duration: 0.5, delay: i * 0.02 }}
-              onClick={() => removeCard(card.id)}
-              whileHover={{ scale: 1.1, zIndex: 10 }}
-              whileTap={{ scale: 0.95 }}
             >
               <div 
                 className="flex-1 w-full" 
