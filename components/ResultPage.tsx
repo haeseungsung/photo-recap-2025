@@ -363,7 +363,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                         zIndex: dimmed ? 1 : pos.zIndex
                       }}
                     >
-                      <div className="bg-white p-1 shadow-sm md:scale-[0.7] md:origin-center">
+                      <div className="bg-white p-1 shadow-sm md:scale-[0.6] md:origin-center">
                          <img src={photo.url} alt="" className="w-full h-auto pointer-events-none select-none block" />
                       </div>
                     </motion.div>
