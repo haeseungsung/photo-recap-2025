@@ -250,6 +250,63 @@ export const generatePaletteFromColors = (colors: ColorData[], k: number = 5): C
 
     iterations++;
   }
-  
-  return centroids;
+
+  // 4. Post-processing: Ensure diversity by removing similar colors
+  const minColorDistance = 20; // Minimum Delta E distance between palette colors
+  const finalPalette: ColorData[] = [];
+  const usedColors = new Set<number>();
+
+  // Convert centroids to HSL for hue checking
+  const centroidsWithHsl = centroids.map((c, idx) => {
+    const [h, s, l] = rgbToHsl(c.r, c.g, c.b);
+    return { color: c, h, s, l, index: idx };
+  });
+
+  // Sort by saturation (prefer more vibrant colors first)
+  centroidsWithHsl.sort((a, b) => b.s - a.s);
+
+  // Add colors one by one, ensuring minimum distance
+  for (const item of centroidsWithHsl) {
+    if (usedColors.has(item.index)) continue;
+
+    // Check if this color is too similar to any already selected color
+    const isTooSimilar = finalPalette.some(existing =>
+      colorDistance(item.color, existing) < minColorDistance
+    );
+
+    if (!isTooSimilar) {
+      finalPalette.push(item.color);
+      usedColors.add(item.index);
+    }
+  }
+
+  // If we have fewer colors than k, fill remaining slots with diverse colors from distinctColors
+  if (finalPalette.length < k) {
+    // Get remaining colors sorted by saturation
+    const remainingColors = colorsWithHsl
+      .map(item => item.color)
+      .filter(c => !finalPalette.some(existing => colorDistance(c, existing) < minColorDistance));
+
+    // Sort by saturation
+    remainingColors.sort((a, b) => {
+      const [, sA] = rgbToHsl(a.r, a.g, a.b);
+      const [, sB] = rgbToHsl(b.r, b.g, b.b);
+      return sB - sA;
+    });
+
+    // Add colors ensuring diversity
+    for (const candidate of remainingColors) {
+      if (finalPalette.length >= k) break;
+
+      const isTooSimilar = finalPalette.some(existing =>
+        colorDistance(candidate, existing) < minColorDistance
+      );
+
+      if (!isTooSimilar) {
+        finalPalette.push(candidate);
+      }
+    }
+  }
+
+  return finalPalette.slice(0, k);
 };

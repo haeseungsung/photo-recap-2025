@@ -153,15 +153,43 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   return (
     <div className="h-[100dvh] bg-gray-50 md:bg-white text-black pt-6 md:pt-0 px-6 md:px-0 pb-3 md:pb-0 flex flex-col items-center overflow-hidden relative">
 
-      {/* Action Bar */}
-      <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-0 md:absolute md:top-8 md:left-8 md:right-8 z-50 shrink-0">
-        <button onClick={onRetry} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
+      {/* Action Bar - Mobile: top bar, Desktop: left top corner */}
+      <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-0 md:absolute md:top-8 md:left-8 md:w-auto z-50 shrink-0">
+        {/* Mobile layout: spread across */}
+        <button onClick={onRetry} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 md:hidden">
           <RefreshCw size={20} />
         </button>
-        <button onClick={handleShare} className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 text-sm">
+        <button onClick={handleShare} className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 text-sm md:hidden">
           <Share2 size={16} />
           <span className="font-medium">Save</span>
         </button>
+
+        {/* Desktop layout: grouped on left */}
+        <div className="hidden md:flex gap-2">
+          <button onClick={onRetry} className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm">
+            <RefreshCw size={16} />
+            <span className="font-medium">Retry</span>
+          </button>
+          <button onClick={handleShare} className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm">
+            <Share2 size={16} />
+            <span className="font-medium">Save</span>
+          </button>
+          {!isDetailView ? (
+            <button
+                onClick={() => setIsDetailView(true)}
+                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm"
+            >
+                <span className="font-medium">View Details</span>
+            </button>
+          ) : (
+            <button
+                onClick={() => setIsDetailView(false)}
+                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm"
+            >
+                <span className="font-medium">Back</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area (Capture Target) */}
@@ -273,9 +301,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         ) : (
           // --- Instagram 3x3 Grid View ---
           <>
-            {/* 3x3 Grid Container */}
-            <div className="absolute inset-0 z-0 flex items-start justify-center pt-4 md:pt-6 p-4 md:p-8">
-              <div className="w-full max-w-[600px] aspect-square grid grid-cols-3 gap-1 md:gap-2">
+            {/* 3x3 Grid Container - Mobile: center, Desktop: right side */}
+            <div className="absolute inset-0 z-0 flex items-center justify-center md:justify-end pt-4 md:pt-0 p-4 md:p-8 md:pr-16 md:pb-4">
+              <div className="w-full max-w-[600px] md:max-w-[650px] aspect-square grid grid-cols-3 gap-1 md:gap-2">
                 {displayPhotos.map((photo, index) => {
                   const dimmed = isDimmed(photo.id);
 
@@ -287,7 +315,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                         opacity: dimmed ? 0.15 : 1,
                         scale: 1
                       }}
-                      transition={{ delay: index * 0.05 }}
+                      transition={{
+                        delay: index * 0.05,
+                        opacity: { duration: 0 } // Instant opacity change when dimming
+                      }}
                       className="relative w-full h-full bg-gray-100 overflow-hidden"
                     >
                       <img
@@ -301,8 +332,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
               </div>
             </div>
 
-            {/* Palette & Info Section - Left Aligned (Safe Zone Protected) */}
-            <div className="z-30 absolute bottom-4 left-4 md:left-6 md:bottom-6 flex flex-col items-start bg-transparent pointer-events-none select-none">
+            {/* Palette & Info Section - Mobile: bottom-left, Desktop: left side aligned with buttons */}
+            <div className="z-30 absolute bottom-4 left-4 md:left-8 md:top-[70%] md:-translate-y-1/2 md:bottom-auto flex flex-col items-start justify-end bg-transparent pointer-events-none select-none md:h-[min(44vw,44vh)]">
 
                 {/* Title */}
                 <div className="mb-4 text-left pointer-events-auto flex items-center gap-2 group">
@@ -353,8 +384,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         )}
       </div>
 
-      {/* View Toggle Button - Mobile: centered, Desktop: bottom-right */}
-      <div className="flex-1 md:flex-none md:absolute md:bottom-12 md:right-12 flex items-center justify-center z-50">
+      {/* View Toggle Button - Mobile: centered bottom, Desktop: left top with other buttons */}
+      <div className="flex-1 md:hidden flex items-center justify-center z-50">
         {!isDetailView ? (
           <button
               onClick={() => setIsDetailView(true)}
