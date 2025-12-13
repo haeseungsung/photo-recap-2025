@@ -154,159 +154,75 @@ export const getDominantColor = (imageSrc: string): Promise<ColorData> => {
   });
 };
 
-// Improved Clustering with Hue Diversity
+// Simple Delta E based palette generation
+// Selects k most diverse colors using greedy max-min distance with saturation/lightness bonus
 export const generatePaletteFromColors = (colors: ColorData[], k: number = 5): ColorData[] => {
   if (colors.length === 0) return [];
+  if (colors.length <= k) return colors;
 
-  // 1. Filter out duplicates or extremely similar colors using Delta E
-  const distinctColors: ColorData[] = [];
-  colors.forEach(c => {
-    const isSimilar = distinctColors.some(existing => colorDistance(c, existing) < 10);
-    if (!isSimilar) {
-        distinctColors.push(c);
+  // Start with the most saturated color
+  let firstColor = colors[0];
+  let maxSaturation = 0;
+
+  for (const color of colors) {
+    const [, s] = rgbToHsl(color.r, color.g, color.b);
+    if (s > maxSaturation) {
+      maxSaturation = s;
+      firstColor = color;
     }
-  });
+  }
 
-  if (distinctColors.length <= k) return distinctColors;
+  const palette: ColorData[] = [firstColor];
 
-  // 2. Hue-based diverse initialization
-  // Convert colors to HSL and group by hue regions
-  const colorsWithHsl = distinctColors.map(c => {
-    const [h, s, l] = rgbToHsl(c.r, c.g, c.b);
-    return { color: c, h, s, l };
-  });
+  // Greedily add colors that are most distant from the current palette
+  // with bonus for high saturation and good lightness
+  while (palette.length < k) {
+    let maxScore = -1;
+    let bestColor: ColorData | null = null;
 
-  // Sort by hue to spread across color wheel
-  colorsWithHsl.sort((a, b) => a.h - b.h);
+    // For each remaining color, find the minimum distance to the palette
+    for (const candidate of colors) {
+      // Skip if already in palette
+      if (palette.some(p => colorDistance(p, candidate) < 1)) continue;
 
-  // Pick centroids spread across hue spectrum
-  let centroids: ColorData[] = [];
-  const hueStep = 1.0 / k; // Divide hue wheel into k segments
-
-  for (let i = 0; i < k; i++) {
-    const targetHue = i * hueStep;
-
-    // Find color closest to target hue with decent saturation
-    let bestColor = colorsWithHsl[0].color;
-    let bestScore = -1;
-
-    colorsWithHsl.forEach(({ color, h, s, l }) => {
-      // Hue distance (circular)
-      let hueDist = Math.abs(h - targetHue);
-      if (hueDist > 0.5) hueDist = 1.0 - hueDist;
-
-      // Prefer colors with good saturation and not too dark/bright
-      const saturationBonus = s;
-      const lightnessBonus = (l > 0.2 && l < 0.8) ? 1.0 : 0.5;
-
-      const score = (1.0 - hueDist) * saturationBonus * lightnessBonus;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestColor = color;
+      // Find minimum distance to any color in current palette
+      let minDist = Infinity;
+      for (const paletteColor of palette) {
+        const dist = colorDistance(candidate, paletteColor);
+        if (dist < minDist) {
+          minDist = dist;
+        }
       }
-    });
 
-    centroids.push(bestColor);
-  }
+      // Calculate score with bonuses for saturation and lightness
+      const [, s, l] = rgbToHsl(candidate.r, candidate.g, candidate.b);
 
-  // 3. K-means Iteration (Standard)
-  let assignments = new Array(distinctColors.length).fill(-1);
-  let changed = true;
-  let iterations = 0;
+      // Saturation bonus: prefer vibrant colors (0-100% bonus)
+      const saturationBonus = 1 + s;
 
-  while (changed && iterations < 10) {
-    changed = false;
-    const clusters: ColorData[][] = Array.from({ length: k }, () => []);
+      // Lightness bonus: prefer colors that are not too dark or too bright
+      // Optimal range is 0.3-0.7 (30%-70% lightness)
+      const lightnessBonus = (l >= 0.3 && l <= 0.7) ? 1.3 :
+                             (l >= 0.2 && l <= 0.8) ? 1.1 :
+                             1.0;
 
-    // Assign points to closest centroid
-    distinctColors.forEach((c, idx) => {
-        let minDist = Infinity;
-        let clusterIdx = 0;
-        centroids.forEach((cent, ci) => {
-            const dist = colorDistance(c, cent);
-            if (dist < minDist) {
-                minDist = dist;
-                clusterIdx = ci;
-            }
-        });
+      const score = minDist * saturationBonus * lightnessBonus;
 
-        if (assignments[idx] !== clusterIdx) {
-            assignments[idx] = clusterIdx;
-            changed = true;
-        }
-        clusters[clusterIdx].push(c);
-    });
-
-    // Recompute centroids
-    clusters.forEach((cluster, i) => {
-        if (cluster.length > 0) {
-            const r = Math.round(cluster.reduce((sum, c) => sum + c.r, 0) / cluster.length);
-            const g = Math.round(cluster.reduce((sum, c) => sum + c.g, 0) / cluster.length);
-            const b = Math.round(cluster.reduce((sum, c) => sum + c.b, 0) / cluster.length);
-            centroids[i] = { r, g, b, hex: rgbToHex(r, g, b) };
-        }
-    });
-
-    iterations++;
-  }
-
-  // 4. Post-processing: Ensure diversity by removing similar colors
-  const minColorDistance = 20; // Minimum Delta E distance between palette colors
-  const finalPalette: ColorData[] = [];
-  const usedColors = new Set<number>();
-
-  // Convert centroids to HSL for hue checking
-  const centroidsWithHsl = centroids.map((c, idx) => {
-    const [h, s, l] = rgbToHsl(c.r, c.g, c.b);
-    return { color: c, h, s, l, index: idx };
-  });
-
-  // Sort by saturation (prefer more vibrant colors first)
-  centroidsWithHsl.sort((a, b) => b.s - a.s);
-
-  // Add colors one by one, ensuring minimum distance
-  for (const item of centroidsWithHsl) {
-    if (usedColors.has(item.index)) continue;
-
-    // Check if this color is too similar to any already selected color
-    const isTooSimilar = finalPalette.some(existing =>
-      colorDistance(item.color, existing) < minColorDistance
-    );
-
-    if (!isTooSimilar) {
-      finalPalette.push(item.color);
-      usedColors.add(item.index);
-    }
-  }
-
-  // If we have fewer colors than k, fill remaining slots with diverse colors from distinctColors
-  if (finalPalette.length < k) {
-    // Get remaining colors sorted by saturation
-    const remainingColors = colorsWithHsl
-      .map(item => item.color)
-      .filter(c => !finalPalette.some(existing => colorDistance(c, existing) < minColorDistance));
-
-    // Sort by saturation
-    remainingColors.sort((a, b) => {
-      const [, sA] = rgbToHsl(a.r, a.g, a.b);
-      const [, sB] = rgbToHsl(b.r, b.g, b.b);
-      return sB - sA;
-    });
-
-    // Add colors ensuring diversity
-    for (const candidate of remainingColors) {
-      if (finalPalette.length >= k) break;
-
-      const isTooSimilar = finalPalette.some(existing =>
-        colorDistance(candidate, existing) < minColorDistance
-      );
-
-      if (!isTooSimilar) {
-        finalPalette.push(candidate);
+      // Keep track of the color with the highest score
+      if (score > maxScore) {
+        maxScore = score;
+        bestColor = candidate;
       }
     }
+
+    // Add the best scoring color to the palette
+    if (bestColor) {
+      palette.push(bestColor);
+    } else {
+      // No more distinct colors available
+      break;
+    }
   }
 
-  return finalPalette.slice(0, k);
+  return palette;
 };
