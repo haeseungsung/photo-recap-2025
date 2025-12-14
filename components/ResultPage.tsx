@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { PhotoData, PaletteResult, ColorData } from '../types';
 import { colorDistance } from '../utils/colorUtils';
 import html2canvas from 'html2canvas';
-import { RefreshCw, Share2, ChevronDown, ChevronRight, ChevronLeft, Edit2 } from 'lucide-react';
+import { RefreshCw, Share2, ChevronDown, ChevronRight, ChevronLeft, Edit2, HelpCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ResultPageProps {
@@ -13,13 +13,24 @@ interface ResultPageProps {
 
 export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry }) => {
   const [activeColor, setActiveColor] = useState<ColorData | null>(null);
+  const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
   const [isDetailView, setIsDetailView] = useState(false);
   const [currentDetailIndex, setCurrentDetailIndex] = useState(0);
   const [imageAspectRatios, setImageAspectRatios] = useState<{[key: string]: number}>({});
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(palette.title);
+  const [showEditIconHint, setShowEditIconHint] = useState(true);
+  const [showHelpPopup, setShowHelpPopup] = useState(false);
 
   const captureRef = useRef<HTMLDivElement>(null);
+
+  // Hide edit icon hint after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowEditIconHint(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Select best 9 photos based on closest color distance to palette
   const displayPhotos = useMemo(() => {
@@ -104,9 +115,59 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
   }, [activeColor, displayPhotos]);
 
   const isDimmed = (id: string) => {
-    if (!activeColor) return false;
-    return !highlightedIds.has(id);
+    // If a photo is active, dim all other photos
+    if (activePhotoId) {
+      return id !== activePhotoId;
+    }
+    // If a color is active, dim photos not matching that color
+    if (activeColor) {
+      return !highlightedIds.has(id);
+    }
+    return false;
   };
+
+  // Handle photo click to highlight this photo and its related colors
+  const handlePhotoClick = (photo: PhotoData) => {
+    // Toggle: if already showing this photo, clear it
+    if (activePhotoId === photo.id) {
+      setActivePhotoId(null);
+      setActiveColor(null);
+    } else {
+      setActivePhotoId(photo.id);
+      setActiveColor(null); // Clear color selection when photo is clicked
+    }
+  };
+
+  // Get highlighted colors when a photo is active
+  const highlightedColorIndices = useMemo(() => {
+    if (!activePhotoId) return new Set<number>();
+
+    const activePhoto = displayPhotos.find(p => p.id === activePhotoId);
+    if (!activePhoto) return new Set<number>();
+
+    const distances = palette.colors.map((color, idx) => ({
+      idx,
+      dist: colorDistance(activePhoto.dominantColor, color)
+    }));
+
+    distances.sort((a, b) => a.dist - b.dist);
+
+    const result = new Set<number>();
+
+    // Add close matches (Delta E < 40)
+    distances.forEach(d => {
+      if (d.dist < 40) {
+        result.add(d.idx);
+      }
+    });
+
+    // Fallback: if no close matches, take the closest one
+    if (result.size === 0) {
+      result.add(distances[0].idx);
+    }
+
+    return result;
+  }, [activePhotoId, displayPhotos, palette.colors]);
 
   // --- Detail View Logic ---
   
@@ -152,6 +213,75 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
 
   return (
     <div className="h-[100dvh] bg-gray-50 md:bg-white text-black pt-6 md:pt-0 px-6 md:px-0 pb-3 md:pb-0 flex flex-col items-center overflow-hidden relative">
+
+      {/* Help Popup */}
+      <AnimatePresence>
+        {showHelpPopup && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowHelpPopup(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+            />
+
+            {/* Popup */}
+            <div className="fixed inset-0 flex items-center justify-center p-4 z-[70] pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white text-black p-6 md:p-8 rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto"
+              >
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <HelpCircle size={20} className="text-blue-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold">사용 가이드</h3>
+                  </div>
+
+                  <div className="space-y-3 text-gray-700">
+                    <div className="flex gap-3">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <p className="flex-1">
+                        <span className="font-semibold text-black">팔레트 색상 클릭:</span> 관련된 사진들이 강조됩니다
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <p className="flex-1">
+                        <span className="font-semibold text-black">사진 클릭:</span> 해당 사진과 가장 관련된 팔레트 색상이 강조됩니다
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <p className="flex-1">
+                        <span className="font-semibold text-black">팔레트 이름 수정:</span> 타이틀 옆 연필 아이콘을 클릭하거나 타이틀에 마우스를 올려보세요
+                      </p>
+                    </div>
+                    <div className="flex gap-3">
+                      <span className="text-blue-600 font-bold">•</span>
+                      <p className="flex-1">
+                        <span className="font-semibold text-black">자세히 보기:</span> 모든 사진과 관련 색상을 하나씩 확인할 수 있습니다
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowHelpPopup(false)}
+                    className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium mt-2"
+                  >
+                    확인
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Action Bar - Mobile: top bar, Desktop: left top corner */}
       <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-0 md:absolute md:top-8 md:left-8 md:w-auto z-50 shrink-0">
@@ -237,8 +367,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                           const isSquare = aspectRatio && aspectRatio >= 0.9 && aspectRatio <= 1.1;
                           const isLandscape = aspectRatio && aspectRatio > 1.1;
 
-                          // Square and landscape: 95%, Portrait: 85%
-                          let maxSize = (isSquare || isLandscape) ? '95%' : '85%';
+                          // Increased sizes for better visibility
+                          let maxSize = (isSquare || isLandscape) ? '98%' : '92%';
 
                           return (
                               <motion.div
@@ -253,7 +383,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                                   <img
                                       src={currentPhoto.url}
                                       alt="Detail"
-                                      className="object-contain shadow-xl md:scale-[0.5]"
+                                      className="object-contain shadow-xl"
                                       style={{
                                         maxWidth: maxSize,
                                         maxHeight: maxSize
@@ -301,8 +431,8 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
         ) : (
           // --- Instagram 3x3 Grid View ---
           <>
-            {/* 3x3 Grid Container - Mobile: center, Desktop: right side */}
-            <div className="absolute inset-0 z-0 flex items-center justify-center md:justify-end pt-4 md:pt-0 p-4 md:p-8 md:pr-16 md:pb-4">
+            {/* 3x3 Grid Container - Mobile: top, Desktop: right side top */}
+            <div className="absolute inset-0 z-0 flex items-start justify-center md:justify-end pt-4 md:pt-8 p-4 md:p-8 md:pr-16">
               <div className="w-full max-w-[600px] md:max-w-[650px] aspect-square grid grid-cols-3 gap-1 md:gap-2">
                 {displayPhotos.map((photo, index) => {
                   const dimmed = isDimmed(photo.id);
@@ -310,16 +440,16 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                   return (
                     <motion.div
                       key={photo.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
+                      initial={{ opacity: 0 }}
                       animate={{
-                        opacity: dimmed ? 0.15 : 1,
-                        scale: 1
+                        opacity: dimmed ? 0.15 : 1
                       }}
                       transition={{
-                        delay: index * 0.05,
+                        duration: 0.3,
                         opacity: { duration: 0 } // Instant opacity change when dimming
                       }}
-                      className="relative w-full h-full bg-gray-100 overflow-hidden"
+                      onClick={() => handlePhotoClick(photo)}
+                      className="relative w-full h-full bg-gray-100 overflow-hidden cursor-pointer"
                     >
                       <img
                         src={photo.url}
@@ -358,7 +488,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
                             </h2>
                             <button
                                 onClick={() => setIsEditingTitle(true)}
-                                className="p-1.5 hover:bg-gray-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                className={`p-1.5 hover:bg-gray-100 rounded-full transition-all duration-500 ${
+                                    showEditIconHint ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                                }`}
                             >
                                 <Edit2 size={18} className="text-gray-600" />
                             </button>
@@ -368,16 +500,38 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
 
                 {/* Color Swatches */}
                 <div className="flex gap-3 pointer-events-auto">
-                    {palette.colors.map((color, idx) => (
-                        <button
-                            key={idx}
-                            className="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-lg hover:-translate-y-1 transition-transform duration-300 border-2 border-white focus:outline-none ring-1 ring-black/5"
-                            style={{ backgroundColor: color.hex }}
-                            onMouseEnter={() => setActiveColor(color)}
-                            onMouseLeave={() => setActiveColor(null)}
-                            onClick={() => setActiveColor(activeColor === color ? null : color)}
-                        />
-                    ))}
+                    {palette.colors.map((color, idx) => {
+                        // If photo is active, highlight related colors
+                        // If color is active, highlight that color
+                        // Otherwise, show all colors normally
+                        let isActive = true;
+                        if (activePhotoId) {
+                            isActive = highlightedColorIndices.has(idx);
+                        } else if (activeColor) {
+                            isActive = activeColor === color;
+                        }
+
+                        return (
+                            <button
+                                key={idx}
+                                className="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-lg hover:-translate-y-1 transition-all duration-300 border-2 border-white focus:outline-none ring-1 ring-black/5"
+                                style={{
+                                    backgroundColor: color.hex,
+                                    opacity: isActive ? 1 : 0.2
+                                }}
+                                onMouseEnter={() => {
+                                    if (!activePhotoId) setActiveColor(color);
+                                }}
+                                onMouseLeave={() => {
+                                    if (!activePhotoId) setActiveColor(null);
+                                }}
+                                onClick={() => {
+                                    setActivePhotoId(null); // Clear photo selection
+                                    setActiveColor(activeColor === color ? null : color);
+                                }}
+                            />
+                        );
+                    })}
                 </div>
             </div>
           </>
@@ -402,6 +556,15 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
           </button>
         )}
       </div>
+
+      {/* Help Button - Bottom Left */}
+      <button
+        onClick={() => setShowHelpPopup(true)}
+        className="absolute bottom-6 left-6 p-3 bg-black/10 hover:bg-black/20 rounded-full transition-all hover:scale-110 z-50 border border-black/10"
+        aria-label="도움말"
+      >
+        <HelpCircle size={24} className="text-black" strokeWidth={2} />
+      </button>
 
     </div>
   );

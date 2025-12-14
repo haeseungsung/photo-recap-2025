@@ -122,7 +122,7 @@ export const LoadingPage: React.FC = () => {
         
         <div className="inline-block mt-3 md:mt-5">
             <p className="text-2xl md:text-4xl lg:text-5xl font-light text-black tracking-tighter leading-[1] whitespace-nowrap">
-                Your 2025 Color Palette
+                Your Color Palette
             </p>
             <div className="w-full h-0.5 md:h-1 bg-gray-200 mt-4 md:mt-5 rounded-full overflow-hidden">
                 <motion.div 

@@ -123,11 +123,6 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
 
       {/* Foreground Content */}
       <div className="z-10 flex flex-col items-start max-w-4xl w-full px-8 pointer-events-none">
-        <h1 className="text-8xl md:text-9xl font-bold tracking-tighter text-black leading-[0.85] mix-blend-multiply">
-          2025<br/>
-          Colors
-        </h1>
-        <div className="h-8"></div>
       </div>
 
       <div className="z-20 absolute bottom-12 md:bottom-20 pointer-events-auto">
