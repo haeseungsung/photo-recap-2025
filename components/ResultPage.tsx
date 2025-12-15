@@ -115,14 +115,45 @@ export const ResultPage: React.FC<ResultPageProps> = ({
           backgroundColor: "#f9fafb",
           useCORS: true,
         });
-        const link = document.createElement("a");
-        link.download = "my-2025-palette.png";
-        link.href = canvas.toDataURL();
-        link.click();
+
+        // Convert canvas to blob
+        canvas.toBlob(async (blob) => {
+          if (!blob) return;
+
+          const file = new File([blob], "my-2025-palette.png", {
+            type: "image/png",
+          });
+
+          // Check if Web Share API is supported (mainly mobile)
+          if (navigator.share && navigator.canShare?.({ files: [file] })) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: "My 2025 Color Palette",
+                text: "Check out my 2025 color palette! 🎨",
+              });
+            } catch (err) {
+              // User cancelled or share failed, fallback to download
+              if ((err as Error).name !== "AbortError") {
+                downloadImage(canvas);
+              }
+            }
+          } else {
+            // Fallback to download for desktop or unsupported browsers
+            downloadImage(canvas);
+          }
+        }, "image/png");
       } catch (err) {
         console.error("Capture failed", err);
       }
     }
+  };
+
+  const downloadImage = (canvas: HTMLCanvasElement) => {
+    const link = document.createElement("a");
+    link.download = "my-2025-palette.png";
+    link.href = canvas.toDataURL();
+    link.click();
   };
 
   return (
