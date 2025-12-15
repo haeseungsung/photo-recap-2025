@@ -1,33 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { PhotoData, PaletteResult, ColorData } from "../types";
-import { applyPaletteFilter, colorDistance } from "../utils/colorUtils";
+import { PhotoData, PaletteResult } from "../types";
+import { applyPaletteFilter } from "../utils/colorUtils";
 import { RefreshCw, Share2 } from "lucide-react";
 import html2canvas from "html2canvas";
+import BarcodeIcon from "./BarcodeIcon";
 
 interface ResultPageProps {
   photos: PhotoData[];
   palette: PaletteResult;
   onRetry: () => void;
 }
-
-// Helper function to find the closest palette color for a given color
-const findClosestPaletteColor = (
-  color: ColorData,
-  paletteColors: ColorData[]
-): number => {
-  let minDistance = Infinity;
-  let closestIndex = 0;
-
-  paletteColors.forEach((paletteColor, index) => {
-    const distance = colorDistance(color, paletteColor);
-    if (distance < minDistance) {
-      minDistance = distance;
-      closestIndex = index;
-    }
-  });
-
-  return closestIndex;
-};
 
 export const ResultPage: React.FC<ResultPageProps> = ({
   photos,
@@ -37,10 +19,25 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   const [filteredPhotoUrls, setFilteredPhotoUrls] = useState<{
     [photoId: string]: string;
   }>({});
+  const [photoColorCounts, setPhotoColorCounts] = useState<{
+    [photoId: string]: number[];
+  }>({});
+  const [isPrinting, setIsPrinting] = useState(false);
   const captureRef = React.useRef<HTMLDivElement>(null);
 
   const paletteColors = palette?.colors || [];
   const validPhotos = Array.isArray(photos) ? photos : [];
+
+  // Start printing animation on mount
+  useEffect(() => {
+    const printTimer = setTimeout(() => {
+      setIsPrinting(true);
+    }, 100);
+
+    return () => {
+      clearTimeout(printTimer);
+    };
+  }, []);
 
   // Calculate color percentages based on actual photo color distribution
   const colorPercentages = useMemo(() => {
@@ -48,21 +45,20 @@ export const ResultPage: React.FC<ResultPageProps> = ({
       return paletteColors.map(() => 0);
     }
 
-    // Count how many times each palette color is the closest match
-    const counts = new Array(paletteColors.length).fill(0);
+    // Sum up color counts from all photos
+    const totalCounts = new Array(paletteColors.length).fill(0);
 
     validPhotos.forEach((photo) => {
-      if (photo.topColors && photo.topColors.colors) {
-        // For each photo, count all its top colors
-        photo.topColors.colors.forEach((color) => {
-          const closestIndex = findClosestPaletteColor(color, paletteColors);
-          counts[closestIndex]++;
+      const counts = photoColorCounts[photo.id];
+      if (counts && counts.length === paletteColors.length) {
+        counts.forEach((count, index) => {
+          totalCounts[index] += count;
         });
       }
     });
 
     // Calculate total and percentages
-    const total = counts.reduce((sum, count) => sum + count, 0);
+    const total = totalCounts.reduce((sum, count) => sum + count, 0);
 
     if (total === 0) {
       // Fallback to equal distribution
@@ -71,7 +67,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
     }
 
     // Calculate percentages and ensure they sum to 100
-    const percentages = counts.map((count) =>
+    const percentages = totalCounts.map((count) =>
       Math.round((count / total) * 100)
     );
 
@@ -80,23 +76,27 @@ export const ResultPage: React.FC<ResultPageProps> = ({
     if (sum !== 100 && percentages.length > 0) {
       const diff = 100 - sum;
       // Find the index with the highest count to adjust
-      const maxIndex = counts.indexOf(Math.max(...counts));
+      const maxIndex = totalCounts.indexOf(Math.max(...totalCounts));
       percentages[maxIndex] += diff;
     }
 
     return percentages;
-  }, [paletteColors, validPhotos]);
+  }, [paletteColors, validPhotos, photoColorCounts]);
 
   // Apply palette filter to photos
   useEffect(() => {
     validPhotos.forEach((photo) => {
       if (!filteredPhotoUrls[photo.id] && photo && photo.url) {
         applyPaletteFilter(photo.url, paletteColors, 15, 0.18, 15)
-          .then((filteredUrl) => {
-            if (filteredUrl) {
+          .then((result) => {
+            if (result && result.url) {
               setFilteredPhotoUrls((prev) => ({
                 ...prev,
-                [photo.id]: filteredUrl,
+                [photo.id]: result.url,
+              }));
+              setPhotoColorCounts((prev) => ({
+                ...prev,
+                [photo.id]: result.colorCounts,
               }));
             }
           })
@@ -139,158 +139,155 @@ export const ResultPage: React.FC<ResultPageProps> = ({
         ></div>
       </div>
 
-      {/* Action Buttons - Top */}
-      <div className="fixed top-8 left-8 z-50 flex gap-2">
-        <button
-          onClick={onRetry}
-          className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm"
-        >
-          <RefreshCw size={16} />
-          <span className="font-medium">Retry</span>
-        </button>
-        <button
-          onClick={handleShare}
-          className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm"
-        >
-          <Share2 size={16} />
-          <span className="font-medium">Save</span>
-        </button>
-      </div>
-
       {/* Main Content Area */}
       <main className="relative z-10 w-full px-4 pb-20">
         {/* Receipt Wrapper */}
-        <div
-          ref={captureRef}
-          className="relative w-full max-w-[600px] mx-auto overflow-hidden pb-4 pt-0"
-        >
-          <div className="relative w-full max-w-[580px] mx-auto">
-            {/* The Receipt Paper */}
-            <div className="relative bg-[#FCFAF7] text-[#1A1A1A] font-mono px-8 pt-12 pb-16 shadow-lg">
-              {/* Subtle Folds/Wrinkles */}
-              <div
-                className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5"
-                style={{
-                  background:
-                    "linear-gradient(175deg, transparent 40%, #000 40%, transparent 43%), linear-gradient(5deg, transparent 60%, #000 60%, transparent 62%)",
-                }}
-              ></div>
-
-              {/* Header */}
-              <div className="text-center mb-8">
-                <h1 className="text-3xl font-bold tracking-tighter uppercase mb-2">
-                  Color Receipt
-                </h1>
-                <p className="text-xs text-gray-500 uppercase tracking-widest">
-                  Your 2025 Palette
-                </p>
-                <p className="text-xs text-gray-500 mt-2">
-                  {new Date()
-                    .toLocaleDateString("en-US", {
-                      weekday: "short",
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })
-                    .toUpperCase()}
-                  <br />
-                  {new Date().toLocaleTimeString("en-US", {
-                    hour12: false,
-                  })}
-                </p>
-              </div>
-
-              {/* Divider */}
-              <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
-
-              {/* Photo Grid */}
-              <div className="mb-8">
-                <div className="text-xs text-gray-500 uppercase mb-3">
-                  Photos ({validPhotos.length})
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {validPhotos.slice(0, 6).map((photo) => {
-                    const displayUrl = filteredPhotoUrls[photo.id] || photo.url;
-                    return (
-                      <div
-                        key={photo.id}
-                        className="aspect-square bg-gray-100 overflow-hidden"
-                      >
-                        <img
-                          src={displayUrl}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            if (displayUrl !== photo.url) {
-                              e.currentTarget.src = photo.url;
-                            }
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
-
-              {/* Color Palette List */}
-              <div className="flex flex-col gap-3 mb-8 text-sm">
-                <div className="flex justify-between text-xs text-gray-500 uppercase mb-1">
-                  <span>Color</span>
-                  <span>Amount</span>
-                </div>
-                {paletteColors.map((color, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-full border-2 border-white shadow-md ring-1 ring-black/10"
-                        style={{ backgroundColor: color.hex }}
-                      />
-                      <span className="text-xs text-gray-500 font-sans tracking-wider">
-                        {color.hex}
-                      </span>
-                    </div>
-                    <div className="font-bold">{colorPercentages[index]}%</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Divider */}
-              <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
-
-              {/* Total Section */}
-              <div className="flex justify-between items-end mb-8 font-bold text-lg">
-                <span>TOTAL</span>
-                <span>100%</span>
-              </div>
-
-              {/* Barcode */}
-              <div className="text-center space-y-2">
+        <div className="relative w-full max-w-[360px] mx-auto overflow-hidden pb-4 pt-0">
+          <div className="relative w-full max-w-[340px] mx-auto perspective-1000">
+            {/* Animation Container */}
+            <div
+              ref={captureRef}
+              className={`transform transition-transform duration-[2500ms] ease-linear will-change-transform ${
+                isPrinting ? "translate-y-0" : "-translate-y-full"
+              }`}
+            >
+              {/* The Receipt Paper */}
+              <div className="relative bg-[#FCFAF7] text-[#1A1A1A] font-mono px-6 pt-12 pb-16 shadow-lg">
+                {/* Subtle Folds/Wrinkles */}
                 <div
-                  className="h-12 w-3/4 mx-auto bg-[#1A1A1A] opacity-90"
+                  className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5"
                   style={{
-                    maskImage:
-                      "linear-gradient(90deg, transparent 2%, black 2%, black 4%, transparent 4%, transparent 6%, black 6%, black 10%, transparent 10%, transparent 12%, black 12%, black 18%, transparent 18%, transparent 20%, black 20%, black 22%, transparent 22%, transparent 26%, black 26%, black 30%, transparent 30%, transparent 34%, black 34%, black 36%, transparent 36%, transparent 40%, black 40%, black 45%, transparent 45%, transparent 48%, black 48%, black 55%, transparent 55%, transparent 60%, black 60%, black 65%, transparent 65%, transparent 70%, black 70%, black 80%, transparent 80%, transparent 85%, black 85%, black 90%, transparent 90%, transparent 95%, black 95%)",
+                    background:
+                      "linear-gradient(175deg, transparent 40%, #000 40%, transparent 43%), linear-gradient(5deg, transparent 60%, #000 60%, transparent 62%)",
                   }}
                 ></div>
-                <p className="text-[10px] uppercase tracking-[0.2em]">
-                  Thank You
-                </p>
-              </div>
 
-              {/* Jagged Bottom Edge */}
-              <div
-                className="absolute bottom-0 left-0 w-full h-3 bg-[#FCFAF7]"
-                style={{
-                  clipPath:
-                    "polygon(0 0, 3% 50%, 6% 0, 9% 50%, 12% 0, 15% 50%, 18% 0, 21% 50%, 24% 0, 27% 50%, 30% 0, 33% 50%, 36% 0, 39% 50%, 42% 0, 45% 50%, 48% 0, 51% 50%, 54% 0, 57% 50%, 60% 0, 63% 50%, 66% 0, 69% 50%, 72% 0, 75% 50%, 78% 0, 81% 50%, 84% 0, 87% 50%, 90% 0, 93% 50%, 96% 0, 99% 50%, 100% 0, 100% 100%, 0 100%)",
-                }}
-              ></div>
+                {/* Header */}
+                <div className="text-center mb-8 relative">
+                  {/* Retry Button - Top Right */}
+
+                  <div className="flex justify-center items-center pb-2 gap-1">
+                    <h1 className="text-2xl font-bold tracking-tighter uppercase ">
+                      Color Receipt
+                    </h1>
+                    <button
+                      onClick={onRetry}
+                      className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
+                      aria-label="Retry"
+                    >
+                      <RefreshCw size={14} className="text-gray-600" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest">
+                    Your 2025 Palette
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {`${new Date().toLocaleString("sv-SE").replace("T", " ")}`}
+                  </p>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Photo Grid */}
+                <div className="mb-8">
+                  <div className="text-xs text-gray-500 uppercase mb-3">
+                    Photos ({validPhotos.length})
+                  </div>
+                  <div
+                    className={`grid gap-2 ${
+                      validPhotos.length < 2
+                        ? "grid-cols-1"
+                        : validPhotos.length === 2 || validPhotos.length === 4
+                        ? "grid-cols-2"
+                        : "grid-cols-3"
+                    }`}
+                  >
+                    {validPhotos.slice(0, 6).map((photo) => {
+                      const displayUrl =
+                        filteredPhotoUrls[photo.id] || photo.url;
+                      return (
+                        <div
+                          key={photo.id}
+                          className="aspect-square bg-gray-100 overflow-hidden"
+                        >
+                          <img
+                            src={displayUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              if (displayUrl !== photo.url) {
+                                e.currentTarget.src = photo.url;
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Color Palette List */}
+                <div className="flex flex-col gap-3 mb-8 text-sm">
+                  <div className="flex justify-between text-xs text-gray-500 uppercase mb-1">
+                    <span>HEX</span>
+                    <span>Amount</span>
+                  </div>
+                  {paletteColors.map((color, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-6 rounded-full border-2 border-white ring-1 ring-black/10"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span className="text-xs text-gray-500 font-mono tracking-wider">
+                          {color.hex}
+                        </span>
+                      </div>
+                      <div className="font-bold">
+                        {colorPercentages[index]}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Total Section */}
+                <div className="flex justify-between items-end mb-8 font-bold text-lg">
+                  <span>TOTAL</span>
+                  <span>100%</span>
+                </div>
+
+                {/* Barcode */}
+                <button
+                  onClick={handleShare}
+                  className="w-full text-center space-y-2 transition-all duration-300 "
+                >
+                  <div className="w-3/4 mx-auto flex justify-center">
+                    <BarcodeIcon height={80} />
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[0.2em]">
+                    Save Your Receipt
+                  </p>
+                </button>
+
+                {/* Jagged Bottom Edge */}
+                <div
+                  className="absolute bottom-0 left-0 w-full h-3 bg-[#FCFAF7]"
+                  style={{
+                    clipPath:
+                      "polygon(0 0, 3% 50%, 6% 0, 9% 50%, 12% 0, 15% 50%, 18% 0, 21% 50%, 24% 0, 27% 50%, 30% 0, 33% 50%, 36% 0, 39% 50%, 42% 0, 45% 50%, 48% 0, 51% 50%, 54% 0, 57% 50%, 60% 0, 63% 50%, 66% 0, 69% 50%, 72% 0, 75% 50%, 78% 0, 81% 50%, 84% 0, 87% 50%, 90% 0, 93% 50%, 96% 0, 99% 50%, 100% 0, 100% 100%, 0 100%)",
+                  }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>

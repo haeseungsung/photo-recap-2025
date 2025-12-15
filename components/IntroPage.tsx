@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import HalftoneGraphic from "./HalftoneGraphic";
+import BarcodeIcon from "./BarcodeIcon";
 
 interface IntroPageProps {
   onStart: () => void;
@@ -67,29 +68,18 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 {/* Header */}
                 <div className="text-center mb-8">
                   <h1 className="text-2xl font-bold tracking-tighter uppercase mb-2">
-                    Photo Recap
+                    2025 Color Receipt
                   </h1>
-                  <p className="text-xs text-gray-500 uppercase tracking-widest">
+                  {/* <p className="text-xs text-gray-500 uppercase tracking-widest">
                     Color Palette Generator
-                  </p>
+                  </p> */}
                   <p className="text-xs text-gray-500 mt-2">
-                    {new Date()
-                      .toLocaleDateString("en-US", {
-                        weekday: "short",
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })
-                      .toUpperCase()}
-                    <br />
-                    {new Date().toLocaleTimeString("en-US", {
-                      hour12: false,
-                    })}
+                    {`${new Date().toLocaleString("sv-SE").replace("T", " ")}`}
                   </p>
                 </div>
 
                 {/* Halftone Graphic Area */}
-                <div className="mb-8 px-4">
+                <div className="mb-8">
                   <HalftoneGraphic />
                 </div>
 
@@ -99,8 +89,8 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 {/* Description */}
                 <div className="text-center mb-6">
                   <p className="text-xs leading-relaxed uppercase opacity-80 max-w-[240px] mx-auto">
-                    Upload your photos and extract harmonious color palettes
-                    from your moments
+                    Upload your photos and extract color palettes from your
+                    moments
                   </p>
                 </div>
 
@@ -108,7 +98,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
 
                 {/* Features List */}
-                <div className="flex flex-col gap-3 mb-8 text-sm">
+                {/* <div className="flex flex-col gap-3 mb-8 text-sm">
                   <div className="flex justify-between text-xs text-gray-500 uppercase mb-1">
                     <span>Features</span>
                   </div>
@@ -124,7 +114,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                       Halftone Processing
                     </span>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Barcode Button */}
                 <button
@@ -136,15 +126,11 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                       : "opacity-90 cursor-default"
                   }`}
                 >
-                  <div
-                    className="h-10 w-3/4 mx-auto bg-[#1A1A1A]"
-                    style={{
-                      maskImage:
-                        "linear-gradient(90deg, transparent 2%, black 2%, black 4%, transparent 4%, transparent 6%, black 6%, black 10%, transparent 10%, transparent 12%, black 12%, black 18%, transparent 18%, transparent 20%, black 20%, black 22%, transparent 22%, transparent 26%, black 26%, black 30%, transparent 30%, transparent 34%, black 34%, black 36%, transparent 36%, transparent 40%, black 40%, black 45%, transparent 45%, transparent 48%, black 48%, black 55%, transparent 55%, transparent 60%, black 60%, black 65%, transparent 65%, transparent 70%, black 70%, black 80%, transparent 80%, transparent 85%, black 85%, black 90%, transparent 90%, transparent 95%, black 95%)",
-                    }}
-                  ></div>
+                  <div className="w-3/4 mx-auto flex justify-center">
+                    <BarcodeIcon height={80} />
+                  </div>
                   <p className="text-[10px] uppercase tracking-[0.2em]">
-                    {showButton ? "Tap to Start" : "Ready to Start"}
+                    Tab to Start
                   </p>
                 </button>
 

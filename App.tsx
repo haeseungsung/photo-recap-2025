@@ -30,9 +30,6 @@ const App: React.FC = () => {
         ({ scoredColors }) => scoredColors
       );
 
-      for (const color of allScoredColors) {
-        console.log("color:", color.color.hex, color.score);
-      }
       // 2. Generate Palette (clustering)
       const paletteColors = generatePaletteFromColors(
         allColors,

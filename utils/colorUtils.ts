@@ -333,7 +333,7 @@ export const applyPaletteFilter = (
   hueThreshold: number = 15, // Lower = stricter matching
   minSaturation: number = 0.18, // Exclude too gray colors
   halftoneSize: number = 15 // Halftone dot size (15x15 blocks)
-): Promise<string> => {
+): Promise<{ url: string; colorCounts: number[] }> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     // Only set crossOrigin for external URLs, not for blob/data URLs
@@ -414,10 +414,18 @@ export const applyPaletteFilter = (
 
       ctx.putImageData(imageData, 0, 0);
 
-      // Apply halftone effect to entire image
-      applyHalftone(canvas, isGrayscale, paletteColors, halftoneSize);
+      // Apply halftone effect to entire image and get color counts
+      const colorCounts = applyHalftone(
+        canvas,
+        isGrayscale,
+        paletteColors,
+        halftoneSize
+      );
 
-      resolve(canvas.toDataURL("image/jpeg", 0.9));
+      resolve({
+        url: canvas.toDataURL("image/jpeg", 0.9),
+        colorCounts,
+      });
     };
     img.onerror = reject;
   });
@@ -429,7 +437,7 @@ const applyHalftone = (
   isGrayscale: boolean[],
   paletteColors: ColorData[],
   dotSize: number = 15
-) => {
+): number[] => {
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
   const { width, height } = canvas;
 
@@ -446,6 +454,9 @@ const applyHalftone = (
   // White background
   halftoneCtx.fillStyle = "#ffffff";
   halftoneCtx.fillRect(0, 0, width, height);
+
+  // Track how many blocks each palette color is applied to
+  const colorCounts = new Array(paletteColors.length).fill(0);
 
   // Process each block
   for (let y = 0; y < height; y += dotSize) {
@@ -502,13 +513,17 @@ const applyHalftone = (
           halftoneCtx.fillStyle = "#000000";
         } else {
           // Use closest palette color instead of original color
-          const paletteColor = findClosestPaletteColor(
+          const closestColorIndex = findClosestPaletteColorIndex(
             avgR,
             avgG,
             avgB,
             paletteColors
           );
+          const paletteColor = paletteColors[closestColorIndex];
           halftoneCtx.fillStyle = `rgb(${paletteColor.r}, ${paletteColor.g}, ${paletteColor.b})`;
+
+          // Increment count for this palette color
+          colorCounts[closestColorIndex]++;
         }
         halftoneCtx.fill();
       }
@@ -518,6 +533,8 @@ const applyHalftone = (
   // Copy halftone result back to original canvas
   ctx.clearRect(0, 0, width, height);
   ctx.drawImage(halftoneCanvas, 0, 0);
+
+  return colorCounts;
 };
 
 // RGB → Grayscale
@@ -548,6 +565,31 @@ const findClosestPaletteColor = (
   }
 
   return closest;
+};
+
+// Find closest palette color index
+const findClosestPaletteColorIndex = (
+  r: number,
+  g: number,
+  b: number,
+  palette: ColorData[]
+): number => {
+  let minDist = Infinity;
+  let closestIndex = 0;
+
+  palette.forEach((color, index) => {
+    const dist = Math.sqrt(
+      Math.pow(r - color.r, 2) +
+        Math.pow(g - color.g, 2) +
+        Math.pow(b - color.b, 2)
+    );
+    if (dist < minDist) {
+      minDist = dist;
+      closestIndex = index;
+    }
+  });
+
+  return closestIndex;
 };
 
 // Hue distance (circular)

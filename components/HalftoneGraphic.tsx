@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { applyPaletteFilter } from "../utils/colorUtils";
 
 interface HalftoneGraphicProps {
   className?: string;
@@ -7,53 +8,41 @@ interface HalftoneGraphicProps {
 const HalftoneGraphic: React.FC<HalftoneGraphicProps> = ({
   className = "",
 }) => {
-  const patternId = "halftone-dots";
+  const [processedImageUrl, setProcessedImageUrl] = useState<string>("");
+
+  useEffect(() => {
+    // Process cherry.jpg with halftone filter
+    const cherryImagePath = "/imgs /landing-imgs/cherry.jpg";
+
+    // Use grayscale palette (black only) for pure halftone effect
+    const grayscalePalette = [{ r: 0, g: 0, b: 0, hex: "#000000" }];
+
+    applyPaletteFilter(cherryImagePath, grayscalePalette, 15, 0.0, 15)
+      .then((result) => {
+        setProcessedImageUrl(result.url);
+      })
+      .catch((err) => {
+        console.error("Failed to process cherry image:", err);
+      });
+  }, []);
 
   return (
     <div
       className={`relative w-full aspect-square flex items-center justify-center ${className}`}
     >
-      <svg viewBox="0 0 200 200" className="w-full h-full">
-        <defs>
-          <pattern
-            id={patternId}
-            x="0"
-            y="0"
-            width="8"
-            height="8"
-            patternUnits="userSpaceOnUse"
-          >
-            <circle cx="4" cy="4" r="2.5" fill="#1a1a1a" />
-          </pattern>
-        </defs>
-
-        {/* Border box */}
-        <rect
-          x="5"
-          y="5"
-          width="190"
-          height="190"
-          fill="none"
-          stroke="#1a1a1a"
-          strokeWidth="2"
-        />
-
-        {/* 2025 text with halftone pattern */}
-        <g fill={`url(#${patternId})`}>
-          <text
-            x="50%"
-            y="55%"
-            dominantBaseline="middle"
-            textAnchor="middle"
-            fontSize="80"
-            fontWeight="bold"
-            fontFamily="monospace"
-            fill="black"
-          >
-            2025
-          </text>
-        </g>
-      </svg>
+      <div className="relative w-full h-full ">
+        {processedImageUrl ? (
+          <img
+            src={processedImageUrl}
+            alt="Cherry halftone"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+            <span className="text-xs text-gray-500">Processing...</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
