@@ -77,7 +77,9 @@ export const ResultPage: React.FC<ResultPageProps> = ({
       const diff = parseFloat((100 - sum).toFixed(2));
       // Find the index with the highest count to adjust
       const maxIndex = totalCounts.indexOf(Math.max(...totalCounts));
-      percentages[maxIndex] = parseFloat((percentages[maxIndex] + diff).toFixed(2));
+      percentages[maxIndex] = parseFloat(
+        (percentages[maxIndex] + diff).toFixed(2)
+      );
     }
 
     return percentages;
@@ -117,8 +119,6 @@ export const ResultPage: React.FC<ResultPageProps> = ({
           allowTaint: true,
           logging: false,
           imageTimeout: 0,
-          windowWidth: captureRef.current.scrollWidth,
-          windowHeight: captureRef.current.scrollHeight,
         });
 
         // Convert canvas to blob
@@ -286,9 +286,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                           {color.hex}
                         </span>
                       </div>
-                      <div className="font-bold">
-                        {colorPercentages[index]}%
-                      </div>
+                      <div className="text-xs">{colorPercentages[index]}%</div>
                     </div>
                   ))}
                 </div>
@@ -297,7 +295,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                 <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
 
                 {/* Total Section */}
-                <div className="flex justify-between items-end mb-8 font-bold text-lg">
+                <div className="flex justify-between items-end mb-8 font-bold text-md">
                   <span>TOTAL</span>
                   <span>100%</span>
                 </div>
