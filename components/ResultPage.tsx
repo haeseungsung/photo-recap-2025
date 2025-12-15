@@ -1,9 +1,9 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { PhotoData, PaletteResult, ColorData } from '../types';
-import { colorDistance } from '../utils/colorUtils';
-import html2canvas from 'html2canvas';
-import { RefreshCw, Share2, ChevronDown, ChevronRight, ChevronLeft, Edit2, HelpCircle } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useEffect } from "react";
+import { PhotoData, PaletteResult } from "../types";
+import { applyPaletteFilter } from "../utils/colorUtils";
+import { RefreshCw, Share2 } from "lucide-react";
+import html2canvas from "html2canvas";
+import BarcodeIcon from "./BarcodeIcon";
 
 interface ResultPageProps {
   photos: PhotoData[];
@@ -11,87 +11,112 @@ interface ResultPageProps {
   onRetry: () => void;
 }
 
-export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry }) => {
-  const [activeColor, setActiveColor] = useState<ColorData | null>(null);
-  const [activePhotoId, setActivePhotoId] = useState<string | null>(null);
-  const [isDetailView, setIsDetailView] = useState(false);
-  const [currentDetailIndex, setCurrentDetailIndex] = useState(0);
-  const [imageAspectRatios, setImageAspectRatios] = useState<{[key: string]: number}>({});
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(palette.title);
-  const [showEditIconHint, setShowEditIconHint] = useState(true);
-  const [showHelpPopup, setShowHelpPopup] = useState(false);
+export const ResultPage: React.FC<ResultPageProps> = ({
+  photos,
+  palette,
+  onRetry,
+}) => {
+  const [filteredPhotoUrls, setFilteredPhotoUrls] = useState<{
+    [photoId: string]: string;
+  }>({});
+  const [photoColorCounts, setPhotoColorCounts] = useState<{
+    [photoId: string]: number[];
+  }>({});
+  const [isPrinting, setIsPrinting] = useState(false);
+  const captureRef = React.useRef<HTMLDivElement>(null);
 
-  const captureRef = useRef<HTMLDivElement>(null);
+  const paletteColors = palette?.colors || [];
+  const validPhotos = Array.isArray(photos) ? photos : [];
 
-  // Hide edit icon hint after 2 seconds
+  // Start printing animation on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowEditIconHint(false);
-    }, 2000);
-    return () => clearTimeout(timer);
+    const printTimer = setTimeout(() => {
+      setIsPrinting(true);
+    }, 100);
+
+    return () => {
+      clearTimeout(printTimer);
+    };
   }, []);
 
-  // Select best 9 photos based on closest color distance to palette
-  const displayPhotos = useMemo(() => {
-    // Calculate the minimum distance from each photo to any palette color
-    const photosWithDistance = photos.map(photo => {
-      const minDistance = Math.min(
-        ...palette.colors.map(color => colorDistance(photo.dominantColor, color))
-      );
-      return { photo, minDistance };
-    });
-
-    // Sort by distance (closest first) and take top 9
-    photosWithDistance.sort((a, b) => a.minDistance - b.minDistance);
-    return photosWithDistance.slice(0, 9).map(item => item.photo);
-  }, [photos, palette.colors]);
-
-  // Filter photos for Detail View:
-  // Only include photos that have a "close" connection (Delta E < 45) to at least one palette color.
-  // This ensures every photo shown connects to the palette.
-  const detailPhotos = useMemo(() => {
-    const threshold = 45; // Delta E threshold for "connection"
-    const filtered = photos.filter(photo => {
-      // Check if ANY palette color is close enough
-      return palette.colors.some(c => colorDistance(photo.dominantColor, c) < threshold);
-    });
-    
-    // Safety fallback: if filter removes everything (unlikely), return original photos
-    return filtered.length > 0 ? filtered : photos;
-  }, [photos, palette.colors]);
-
-  // Reset index when entering detail view
-  useEffect(() => {
-    if (isDetailView) {
-        setCurrentDetailIndex(0);
+  // Calculate color percentages based on actual photo color distribution
+  const colorPercentages = useMemo(() => {
+    if (paletteColors.length === 0 || validPhotos.length === 0) {
+      return paletteColors.map(() => 0);
     }
-  }, [isDetailView]);
 
-  // Load image aspect ratios
-  useEffect(() => {
-    detailPhotos.forEach(photo => {
-      if (!imageAspectRatios[photo.id]) {
-        const img = new Image();
-        img.onload = () => {
-          const aspectRatio = img.naturalWidth / img.naturalHeight;
-          setImageAspectRatios(prev => ({ ...prev, [photo.id]: aspectRatio }));
-        };
-        img.src = photo.url;
+    // Sum up color counts from all photos
+    const totalCounts = new Array(paletteColors.length).fill(0);
+
+    validPhotos.forEach((photo) => {
+      const counts = photoColorCounts[photo.id];
+      if (counts && counts.length === paletteColors.length) {
+        counts.forEach((count, index) => {
+          totalCounts[index] += count;
+        });
       }
     });
-  }, [detailPhotos]);
+
+    // Calculate total and percentages
+    const total = totalCounts.reduce((sum, count) => sum + count, 0);
+
+    if (total === 0) {
+      // Fallback to equal distribution
+      const equalPercentage = 100 / paletteColors.length;
+      return paletteColors.map(() => Math.round(equalPercentage));
+    }
+
+    // Calculate percentages and ensure they sum to 100
+    const percentages = totalCounts.map((count) =>
+      Math.round((count / total) * 100)
+    );
+
+    // Adjust to ensure sum is exactly 100
+    const sum = percentages.reduce((a, b) => a + b, 0);
+    if (sum !== 100 && percentages.length > 0) {
+      const diff = 100 - sum;
+      // Find the index with the highest count to adjust
+      const maxIndex = totalCounts.indexOf(Math.max(...totalCounts));
+      percentages[maxIndex] += diff;
+    }
+
+    return percentages;
+  }, [paletteColors, validPhotos, photoColorCounts]);
+
+  // Apply palette filter to photos
+  useEffect(() => {
+    validPhotos.forEach((photo) => {
+      if (!filteredPhotoUrls[photo.id] && photo && photo.url) {
+        applyPaletteFilter(photo.url, paletteColors, 15, 0.18, 15)
+          .then((result) => {
+            if (result && result.url) {
+              setFilteredPhotoUrls((prev) => ({
+                ...prev,
+                [photo.id]: result.url,
+              }));
+              setPhotoColorCounts((prev) => ({
+                ...prev,
+                [photo.id]: result.colorCounts,
+              }));
+            }
+          })
+          .catch((err) => {
+            console.error("Filter failed for", photo.id, err);
+          });
+      }
+    });
+  }, [validPhotos, paletteColors]);
 
   const handleShare = async () => {
     if (captureRef.current) {
       try {
         const canvas = await html2canvas(captureRef.current, {
-            scale: 2, // High res
-            backgroundColor: '#f9fafb', // Match bg-gray-50
-            useCORS: true // Important for images
+          scale: 2,
+          backgroundColor: "#f9fafb",
+          useCORS: true,
         });
-        const link = document.createElement('a');
-        link.download = isDetailView ? 'my-2025-palette-detail.png' : 'my-2025-palette-collage.png';
+        const link = document.createElement("a");
+        link.download = "my-2025-palette.png";
         link.href = canvas.toDataURL();
         link.click();
       } catch (err) {
@@ -100,472 +125,180 @@ export const ResultPage: React.FC<ResultPageProps> = ({ photos, palette, onRetry
     }
   };
 
-  // Determine which photos to highlight based on activeColor (for Collage View)
-  const highlightedIds = useMemo(() => {
-    if (!activeColor) return new Set<string>();
-
-    const withDist = displayPhotos.map(p => ({
-        id: p.id,
-        dist: colorDistance(p.dominantColor, activeColor)
-    }));
-    
-    withDist.sort((a, b) => a.dist - b.dist);
-    const topIds = withDist.slice(0, 5).map(x => x.id);
-    return new Set(topIds);
-  }, [activeColor, displayPhotos]);
-
-  const isDimmed = (id: string) => {
-    // If a photo is active, dim all other photos
-    if (activePhotoId) {
-      return id !== activePhotoId;
-    }
-    // If a color is active, dim photos not matching that color
-    if (activeColor) {
-      return !highlightedIds.has(id);
-    }
-    return false;
-  };
-
-  // Handle photo click to highlight this photo and its related colors
-  const handlePhotoClick = (photo: PhotoData) => {
-    // Toggle: if already showing this photo, clear it
-    if (activePhotoId === photo.id) {
-      setActivePhotoId(null);
-      setActiveColor(null);
-    } else {
-      setActivePhotoId(photo.id);
-      setActiveColor(null); // Clear color selection when photo is clicked
-    }
-  };
-
-  // Get highlighted colors when a photo is active
-  const highlightedColorIndices = useMemo(() => {
-    if (!activePhotoId) return new Set<number>();
-
-    const activePhoto = displayPhotos.find(p => p.id === activePhotoId);
-    if (!activePhoto) return new Set<number>();
-
-    const distances = palette.colors.map((color, idx) => ({
-      idx,
-      dist: colorDistance(activePhoto.dominantColor, color)
-    }));
-
-    distances.sort((a, b) => a.dist - b.dist);
-
-    const result = new Set<number>();
-
-    // Add close matches (Delta E < 40)
-    distances.forEach(d => {
-      if (d.dist < 40) {
-        result.add(d.idx);
-      }
-    });
-
-    // Fallback: if no close matches, take the closest one
-    if (result.size === 0) {
-      result.add(distances[0].idx);
-    }
-
-    return result;
-  }, [activePhotoId, displayPhotos, palette.colors]);
-
-  // --- Detail View Logic ---
-  
-  const handleNextDetailPhoto = () => {
-    setCurrentDetailIndex(prev => (prev + 1) % detailPhotos.length);
-  };
-  
-  const handlePrevDetailPhoto = () => {
-    setCurrentDetailIndex(prev => (prev - 1 + detailPhotos.length) % detailPhotos.length);
-  };
-
-  // Identify highlight colors based on CURRENT filtered photo
-  const highlightedPaletteIndices = useMemo(() => {
-    if (detailPhotos.length === 0) return new Set();
-    const currentPhoto = detailPhotos[currentDetailIndex];
-    if (!currentPhoto) return new Set();
-
-    const distances = palette.colors.map((color, i) => ({
-        index: i,
-        dist: colorDistance(currentPhoto.dominantColor, color)
-    }));
-    
-    distances.sort((a, b) => a.dist - b.dist);
-    
-    // Always include the closest
-    const result = new Set<number>();
-    
-    // Add close matches (Delta E < 40)
-    // Since we filtered photos to ensure at least one match < 45, this will basically always yield results.
-    distances.forEach(d => {
-        if (d.dist < 40) {
-            result.add(d.index);
-        }
-    });
-
-    // Fallback: if somehow nothing matches (due to filter edge case), take the absolute closest
-    if (result.size === 0) {
-        result.add(distances[0].index);
-    }
-    
-    return result;
-  }, [currentDetailIndex, detailPhotos, palette.colors]);
-
   return (
-    <div className="h-[100dvh] bg-gray-50 md:bg-white text-black pt-6 md:pt-0 px-6 md:px-0 pb-3 md:pb-0 flex flex-col items-center overflow-hidden relative">
-
-      {/* Help Popup */}
-      <AnimatePresence>
-        {showHelpPopup && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowHelpPopup(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
-            />
-
-            {/* Popup */}
-            <div className="fixed inset-0 flex items-center justify-center p-4 z-[70] pointer-events-none">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white text-black p-6 md:p-8 rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto"
-              >
-                <div className="flex flex-col space-y-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <HelpCircle size={20} className="text-blue-600" />
-                    </div>
-                    <h3 className="text-2xl font-bold">사용 가이드</h3>
-                  </div>
-
-                  <div className="space-y-3 text-gray-700">
-                    <div className="flex gap-3">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <p className="flex-1">
-                        <span className="font-semibold text-black">팔레트 색상 클릭:</span> 관련된 사진들이 강조됩니다
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <p className="flex-1">
-                        <span className="font-semibold text-black">사진 클릭:</span> 해당 사진과 가장 관련된 팔레트 색상이 강조됩니다
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <p className="flex-1">
-                        <span className="font-semibold text-black">팔레트 이름 수정:</span> 타이틀 옆 연필 아이콘을 클릭하거나 타이틀에 마우스를 올려보세요
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="text-blue-600 font-bold">•</span>
-                      <p className="flex-1">
-                        <span className="font-semibold text-black">자세히 보기:</span> 모든 사진과 관련 색상을 하나씩 확인할 수 있습니다
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setShowHelpPopup(false)}
-                    className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-colors font-medium mt-2"
-                  >
-                    확인
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* Action Bar - Mobile: top bar, Desktop: left top corner */}
-      <div className="w-full max-w-6xl flex justify-between items-center mb-4 md:mb-0 md:absolute md:top-8 md:left-8 md:w-auto z-50 shrink-0">
-        {/* Mobile layout: spread across */}
-        <button onClick={onRetry} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 md:hidden">
-          <RefreshCw size={20} />
-        </button>
-        <button onClick={handleShare} className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors shadow-lg active:scale-95 text-sm md:hidden">
-          <Share2 size={16} />
-          <span className="font-medium">Save</span>
-        </button>
-
-        {/* Desktop layout: grouped on left */}
-        <div className="hidden md:flex gap-2">
-          <button onClick={onRetry} className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm">
-            <RefreshCw size={16} />
-            <span className="font-medium">Retry</span>
-          </button>
-          <button onClick={handleShare} className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm">
-            <Share2 size={16} />
-            <span className="font-medium">Save</span>
-          </button>
-          {!isDetailView ? (
-            <button
-                onClick={() => setIsDetailView(true)}
-                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm"
-            >
-                <span className="font-medium">View Details</span>
-            </button>
-          ) : (
-            <button
-                onClick={() => setIsDetailView(false)}
-                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-full hover:bg-white transition-colors border border-gray-200/60 active:scale-95 text-sm"
-            >
-                <span className="font-medium">Back</span>
-            </button>
-          )}
-        </div>
+    <div className="min-h-screen w-full flex flex-col items-center justify-start pt-12 md:pt-20 bg-gray-50 overflow-auto relative">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-gray-100 to-gray-200 opacity-80"></div>
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")",
+          }}
+        ></div>
       </div>
 
-      {/* Main Content Area (Capture Target) */}
-      <div
-        ref={captureRef}
-        className="w-full max-w-[1000px] md:max-w-none h-[75%] md:h-full bg-white relative overflow-hidden flex flex-col justify-between shadow-2xl md:shadow-none border border-gray-100 md:border-none isolate shrink-0 md:shrink"
-      >
-        {isDetailView ? (
-          // --- Detail View Content ---
-          <div className="absolute inset-0 z-50 bg-white flex flex-col">
+      {/* Main Content Area */}
+      <main className="relative z-10 w-full px-4 pb-20">
+        {/* Receipt Wrapper */}
+        <div className="relative w-full max-w-[360px] mx-auto overflow-hidden pb-4 pt-0">
+          <div className="relative w-full max-w-[340px] mx-auto perspective-1000">
+            {/* Animation Container */}
+            <div
+              ref={captureRef}
+              className={`transform transition-transform duration-[2500ms] ease-linear will-change-transform ${
+                isPrinting ? "translate-y-0" : "-translate-y-full"
+              }`}
+            >
+              {/* The Receipt Paper */}
+              <div className="relative bg-[#FCFAF7] text-[#1A1A1A] font-mono px-6 pt-12 pb-16 shadow-lg">
+                {/* Subtle Folds/Wrinkles */}
+                <div
+                  className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5"
+                  style={{
+                    background:
+                      "linear-gradient(175deg, transparent 40%, #000 40%, transparent 43%), linear-gradient(5deg, transparent 60%, #000 60%, transparent 62%)",
+                  }}
+                ></div>
 
-             {/* TOP: Palette Row */}
-             <div className="w-full h-[140px] bg-white border-b border-gray-100 flex items-center justify-center gap-2 md:gap-4 px-4 shrink-0 z-20">
-                {palette.colors.map((color, idx) => {
-                     const isActive = highlightedPaletteIndices.has(idx);
-                     return (
-                         <motion.div 
-                             key={idx}
-                             animate={{ 
-                                 opacity: isActive ? 1 : 0.2, // Stronger dimming for inactive
-                                 scale: isActive ? 1.05 : 0.95,
-                                 y: isActive ? 0 : 5
-                             }}
-                             className="flex flex-col items-center"
-                         >
-                             <div 
-                                 className="w-12 h-16 md:w-16 md:h-20 shadow-sm" // Vertical rectangular chips
-                                 style={{ backgroundColor: color.hex }}
-                             />
-                             <span className={`text-[10px] uppercase tracking-widest mt-2 font-mono ${isActive ? 'text-black font-bold' : 'text-gray-300'}`}>
-                                 {color.hex}
-                             </span>
-                         </motion.div>
-                     );
-                 })}
-             </div>
+                {/* Header */}
+                <div className="text-center mb-8 relative">
+                  {/* Retry Button - Top Right */}
 
-             {/* BOTTOM: Main Photo Area */}
-             <div className="flex-1 relative bg-gray-50 flex flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
-                <div className="flex-1 w-full flex items-center justify-center relative px-12">
-                  <AnimatePresence mode="wait">
-                      {detailPhotos[currentDetailIndex] && (() => {
-                          const currentPhoto = detailPhotos[currentDetailIndex];
-                          const aspectRatio = imageAspectRatios[currentPhoto.id];
-                          const isSquare = aspectRatio && aspectRatio >= 0.9 && aspectRatio <= 1.1;
-                          const isLandscape = aspectRatio && aspectRatio > 1.1;
-
-                          // Increased sizes for better visibility
-                          let maxSize = (isSquare || isLandscape) ? '98%' : '92%';
-
-                          return (
-                              <motion.div
-                                  key={currentPhoto.id}
-                                  initial={{ opacity: 0, scale: 0.95 }}
-                                  animate={{ opacity: 1, scale: 1 }}
-                                  exit={{ opacity: 0, scale: 1.05 }}
-                                  transition={{ duration: 0.4 }}
-                                  className="flex items-center justify-center relative z-10"
-                                  style={{ maxWidth: '100%', maxHeight: '100%' }}
-                              >
-                                  <img
-                                      src={currentPhoto.url}
-                                      alt="Detail"
-                                      className="object-contain shadow-xl"
-                                      style={{
-                                        maxWidth: maxSize,
-                                        maxHeight: maxSize
-                                      }}
-                                  />
-                              </motion.div>
-                          );
-                      })()}
-                  </AnimatePresence>
-
-                  {/* Modern Navigation Buttons - Minimal arrows */}
-                  <button
-                      onClick={handlePrevDetailPhoto}
-                      className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-black/5 rounded-md text-black/60 hover:text-black transition-all z-20"
-                  >
-                      <ChevronLeft size={20} strokeWidth={1.5} />
-                  </button>
-                  <button
-                      onClick={handleNextDetailPhoto}
-                      className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-black/5 rounded-md text-black/60 hover:text-black transition-all z-20"
-                  >
-                      <ChevronRight size={20} strokeWidth={1.5} />
-                  </button>
-                </div>
-
-                {/* Bottom Navigation Dots - Horizontal */}
-                <div className="w-full flex justify-center mt-4 z-20 px-2">
-                     <div className="flex gap-2 max-w-full overflow-x-auto scrollbar-hide">
-                         {detailPhotos.map((_, idx) => (
-                            <div
-                                key={idx}
-                                onClick={() => setCurrentDetailIndex(idx)}
-                                className={`w-2 h-2 rounded-full transition-all duration-300 cursor-pointer shrink-0 ${
-                                    idx === currentDetailIndex
-                                    ? 'bg-black scale-150 ring-2 ring-gray-200'
-                                    : 'bg-gray-300 hover:bg-gray-400'
-                                }`}
-                            />
-                         ))}
-                     </div>
-                </div>
-
-             </div>
-          </div>
-        ) : (
-          // --- Instagram 3x3 Grid View ---
-          <>
-            {/* 3x3 Grid Container - Mobile: top, Desktop: right side top */}
-            <div className="absolute inset-0 z-0 flex items-start justify-center md:justify-end pt-4 md:pt-8 p-4 md:p-8 md:pr-16">
-              <div className="w-full max-w-[600px] md:max-w-[650px] aspect-square grid grid-cols-3 gap-1 md:gap-2">
-                {displayPhotos.map((photo, index) => {
-                  const dimmed = isDimmed(photo.id);
-
-                  return (
-                    <motion.div
-                      key={photo.id}
-                      initial={{ opacity: 0 }}
-                      animate={{
-                        opacity: dimmed ? 0.15 : 1
-                      }}
-                      transition={{
-                        duration: 0.3,
-                        opacity: { duration: 0 } // Instant opacity change when dimming
-                      }}
-                      onClick={() => handlePhotoClick(photo)}
-                      className="relative w-full h-full bg-gray-100 overflow-hidden cursor-pointer"
+                  <div className="flex justify-center items-center pb-2 gap-1">
+                    <h1 className="text-2xl font-bold tracking-tighter uppercase ">
+                      Color Receipt
+                    </h1>
+                    <button
+                      onClick={onRetry}
+                      className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
+                      aria-label="Retry"
                     >
-                      <img
-                        src={photo.url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </motion.div>
-                  );
-                })}
+                      <RefreshCw size={14} className="text-gray-600" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest">
+                    Your 2025 Palette
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {`${new Date().toLocaleString("sv-SE").replace("T", " ")}`}
+                  </p>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Photo Grid */}
+                <div className="mb-8">
+                  <div className="text-xs text-gray-500 uppercase mb-3">
+                    Photos ({validPhotos.length})
+                  </div>
+                  <div
+                    className={`grid gap-2 ${
+                      validPhotos.length < 2
+                        ? "grid-cols-1"
+                        : validPhotos.length === 2 || validPhotos.length === 4
+                        ? "grid-cols-2"
+                        : "grid-cols-3"
+                    }`}
+                  >
+                    {validPhotos.slice(0, 6).map((photo) => {
+                      const displayUrl =
+                        filteredPhotoUrls[photo.id] || photo.url;
+                      return (
+                        <div
+                          key={photo.id}
+                          className="aspect-square bg-gray-100 overflow-hidden"
+                        >
+                          <img
+                            src={displayUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              if (displayUrl !== photo.url) {
+                                e.currentTarget.src = photo.url;
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Color Palette List */}
+                <div className="flex flex-col gap-3 mb-8 text-sm">
+                  <div className="flex justify-between text-xs text-gray-500 uppercase mb-1">
+                    <span>HEX</span>
+                    <span>Amount</span>
+                  </div>
+                  {paletteColors.map((color, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-4 h-6 rounded-full border-2 border-white ring-1 ring-black/10"
+                          style={{ backgroundColor: color.hex }}
+                        />
+                        <span className="text-xs text-gray-500 font-mono tracking-wider">
+                          {color.hex}
+                        </span>
+                      </div>
+                      <div className="font-bold">
+                        {colorPercentages[index]}%
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Total Section */}
+                <div className="flex justify-between items-end mb-8 font-bold text-lg">
+                  <span>TOTAL</span>
+                  <span>100%</span>
+                </div>
+
+                {/* Barcode */}
+                <button
+                  onClick={handleShare}
+                  className="w-full text-center space-y-2 transition-all duration-300 "
+                >
+                  <div className="w-3/4 mx-auto flex justify-center">
+                    <BarcodeIcon height={80} />
+                  </div>
+                  <p className="text-[10px] uppercase tracking-[0.2em]">
+                    Save Your Receipt
+                  </p>
+                </button>
+
+                {/* Jagged Bottom Edge */}
+                <div
+                  className="absolute bottom-0 left-0 w-full h-3 bg-[#FCFAF7]"
+                  style={{
+                    clipPath:
+                      "polygon(0 0, 3% 50%, 6% 0, 9% 50%, 12% 0, 15% 50%, 18% 0, 21% 50%, 24% 0, 27% 50%, 30% 0, 33% 50%, 36% 0, 39% 50%, 42% 0, 45% 50%, 48% 0, 51% 50%, 54% 0, 57% 50%, 60% 0, 63% 50%, 66% 0, 69% 50%, 72% 0, 75% 50%, 78% 0, 81% 50%, 84% 0, 87% 50%, 90% 0, 93% 50%, 96% 0, 99% 50%, 100% 0, 100% 100%, 0 100%)",
+                  }}
+                ></div>
               </div>
             </div>
+          </div>
+        </div>
+      </main>
 
-            {/* Palette & Info Section - Mobile: bottom-left, Desktop: left side aligned with buttons */}
-            <div className="z-30 absolute bottom-4 left-4 md:left-8 md:top-[70%] md:-translate-y-1/2 md:bottom-auto flex flex-col items-start justify-end bg-transparent pointer-events-none select-none md:h-[min(44vw,44vh)]">
-
-                {/* Title */}
-                <div className="mb-4 text-left pointer-events-auto flex items-center gap-2 group">
-                    {isEditingTitle ? (
-                        <input
-                            type="text"
-                            value={editedTitle}
-                            onChange={(e) => setEditedTitle(e.target.value)}
-                            onBlur={() => setIsEditingTitle(false)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    setIsEditingTitle(false);
-                                }
-                            }}
-                            autoFocus
-                            className="text-2xl md:text-4xl font-light text-black tracking-tight leading-tight bg-transparent border-b-2 border-black focus:outline-none"
-                        />
-                    ) : (
-                        <>
-                            <h2 className="text-2xl md:text-4xl font-light text-black tracking-tight leading-tight">
-                                {editedTitle}
-                            </h2>
-                            <button
-                                onClick={() => setIsEditingTitle(true)}
-                                className={`p-1.5 hover:bg-gray-100 rounded-full transition-all duration-500 ${
-                                    showEditIconHint ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                                }`}
-                            >
-                                <Edit2 size={18} className="text-gray-600" />
-                            </button>
-                        </>
-                    )}
-                </div>
-
-                {/* Color Swatches */}
-                <div className="flex gap-3 pointer-events-auto">
-                    {palette.colors.map((color, idx) => {
-                        // If photo is active, highlight related colors
-                        // If color is active, highlight that color
-                        // Otherwise, show all colors normally
-                        let isActive = true;
-                        if (activePhotoId) {
-                            isActive = highlightedColorIndices.has(idx);
-                        } else if (activeColor) {
-                            isActive = activeColor === color;
-                        }
-
-                        return (
-                            <button
-                                key={idx}
-                                className="w-8 h-8 md:w-10 md:h-10 rounded-full shadow-lg hover:-translate-y-1 transition-all duration-300 border-2 border-white focus:outline-none ring-1 ring-black/5"
-                                style={{
-                                    backgroundColor: color.hex,
-                                    opacity: isActive ? 1 : 0.2
-                                }}
-                                onMouseEnter={() => {
-                                    if (!activePhotoId) setActiveColor(color);
-                                }}
-                                onMouseLeave={() => {
-                                    if (!activePhotoId) setActiveColor(null);
-                                }}
-                                onClick={() => {
-                                    setActivePhotoId(null); // Clear photo selection
-                                    setActiveColor(activeColor === color ? null : color);
-                                }}
-                            />
-                        );
-                    })}
-                </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* View Toggle Button - Mobile: centered bottom, Desktop: left top with other buttons */}
-      <div className="flex-1 md:hidden flex items-center justify-center z-50">
-        {!isDetailView ? (
-          <button
-              onClick={() => setIsDetailView(true)}
-              className="bg-black text-white px-8 py-3 rounded-full text-base font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
-          >
-              팔레트 자세히 보기
-          </button>
-        ) : (
-          <button
-              onClick={() => setIsDetailView(false)}
-              className="bg-black text-white px-8 py-3 rounded-full text-base font-bold shadow-xl hover:scale-105 transition-all hover:bg-gray-900 active:scale-95"
-          >
-              돌아가기
-          </button>
-        )}
-      </div>
-
-      {/* Help Button - Bottom Left */}
-      <button
-        onClick={() => setShowHelpPopup(true)}
-        className="absolute bottom-6 left-6 p-3 bg-black/10 hover:bg-black/20 rounded-full transition-all hover:scale-110 z-50 border border-black/10"
-        aria-label="도움말"
-      >
-        <HelpCircle size={24} className="text-black" strokeWidth={2} />
-      </button>
-
+      {/* Footer */}
+      <footer className="fixed bottom-4 left-0 w-full text-center z-10 opacity-30 hover:opacity-100 transition-opacity">
+        <p className="text-[10px] uppercase font-mono tracking-widest text-gray-500">
+          Photo Recap 2025 / Color Analysis
+        </p>
+      </footer>
     </div>
   );
 };

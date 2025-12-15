@@ -3,13 +3,14 @@ export interface ColorData {
   g: number;
   b: number;
   hex: string;
+  photoIds?: string[]; // Track which photos contributed to this color
 }
 
 export interface PhotoData {
   id: string;
   url: string;
   file: File;
-  dominantColor: ColorData;
+  topColors: ColorData[];
 }
 
 export interface PaletteResult {
@@ -19,8 +20,8 @@ export interface PaletteResult {
 }
 
 export enum AppState {
-  INTRO = 'INTRO',
-  UPLOAD = 'UPLOAD',
-  LOADING = 'LOADING',
-  RESULT = 'RESULT'
+  INTRO = "INTRO",
+  UPLOAD = "UPLOAD",
+  LOADING = "LOADING",
+  RESULT = "RESULT",
 }

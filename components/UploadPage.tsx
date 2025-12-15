@@ -1,9 +1,9 @@
-import React, { useCallback, useState, useRef } from 'react';
-import { Upload, X, ArrowRight, HelpCircle } from 'lucide-react';
-import { PhotoData } from '../types';
-import { getDominantColor } from '../utils/colorUtils';
-import { motion, AnimatePresence } from 'framer-motion';
-import heic2any from 'heic2any';
+import React, { useCallback, useState, useRef } from "react";
+import { Upload, X, ArrowRight, HelpCircle } from "lucide-react";
+import { ColorData, PhotoData } from "../types";
+import { getTopColors } from "../utils/colorUtils";
+import { motion, AnimatePresence } from "framer-motion";
+import heic2any from "heic2any";
 
 interface UploadPageProps {
   onAnalyze: (photos: PhotoData[]) => void;
@@ -14,10 +14,10 @@ const resizeImage = (file: File, maxWidth: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject('Failed to get canvas context');
+        reject("Failed to get canvas context");
         return;
       }
 
@@ -34,13 +34,17 @@ const resizeImage = (file: File, maxWidth: number): Promise<Blob> => {
       canvas.height = height;
       ctx.drawImage(img, 0, 0, width, height);
 
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(blob);
-        } else {
-          reject('Failed to create blob');
-        }
-      }, file.type || 'image/jpeg', 0.85); // 85% quality
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject("Failed to create blob");
+          }
+        },
+        file.type || "image/jpeg",
+        0.85
+      ); // 85% quality
     };
     img.onerror = reject;
     img.src = URL.createObjectURL(file);
@@ -51,8 +55,10 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPrivacyPopup, setShowPrivacyPopup] = useState(false);
-  const [hasExceeded50, setHasExceeded50] = useState(false);
-  const [privacyPopupSource, setPrivacyPopupSource] = useState<'help' | 'upload'>('help');
+  const [hasExceededLimit, setHasExceededLimit] = useState(false);
+  const [privacyPopupSource, setPrivacyPopupSource] = useState<
+    "help" | "upload"
+  >("help");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -65,82 +71,115 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
           let processedFile = file;
 
           // Convert HEIC to JPEG if needed
-          if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+          if (
+            file.type === "image/heic" ||
+            file.type === "image/heif" ||
+            file.name.toLowerCase().endsWith(".heic") ||
+            file.name.toLowerCase().endsWith(".heif")
+          ) {
             try {
               const convertedBlob = await heic2any({
                 blob: file,
-                toType: 'image/jpeg',
-                quality: 0.8 // Reduced quality for memory optimization
+                toType: "image/jpeg",
+                quality: 0.8,
               });
-              // heic2any can return Blob or Blob[], handle both cases
-              const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-              processedFile = new File([blob], file.name.replace(/\.heic$/i, '.jpg'), { type: 'image/jpeg' });
+              const blob = Array.isArray(convertedBlob)
+                ? convertedBlob[0]
+                : convertedBlob;
+              processedFile = new File(
+                [blob],
+                file.name.replace(/\.heic$/i, ".jpg"),
+                { type: "image/jpeg" }
+              );
             } catch (error) {
-              console.error('HEIC conversion failed for', file.name, ':', error);
-              // If conversion fails, skip this file
+              console.error(
+                "HEIC conversion failed for",
+                file.name,
+                ":",
+                error
+              );
               return null;
             }
           }
 
-          // OPTIMIZATION: Resize large images to save memory
-          const resizedBlob = await resizeImage(processedFile, 1920); // Max 1920px width
-          const resizedFile = new File([resizedBlob], processedFile.name, { type: processedFile.type });
+          const resizedBlob = await resizeImage(processedFile, 1920);
+          const resizedFile = new File([resizedBlob], processedFile.name, {
+            type: processedFile.type,
+          });
 
           const url = URL.createObjectURL(resizedFile);
-          const dominantColor = await getDominantColor(url);
+          const topColors = await getTopColors(url, 5);
           return {
             id: Math.random().toString(36).substring(7),
             file: resizedFile,
             url,
-            dominantColor
+            topColors,
           };
         } catch (error) {
-          console.error('Failed to process image', file.name, ':', error);
+          console.error("Failed to process image", file.name, ":", error);
           return null;
         }
       });
 
-      const processedPhotos = (await Promise.all(newPhotosPromises)).filter((p): p is PhotoData => p !== null);
-      // Limit to 50 photos total
-      setPhotos(prev => {
+      const processedPhotos = (await Promise.all(newPhotosPromises)).filter(
+        (
+          p
+        ): p is PhotoData & {
+          topColors: {
+            colors: ColorData[];
+            scoredColors: { color: ColorData; score: number }[];
+          };
+        } => p !== null
+      );
+
+      setPhotos((prev) => {
         const combined = [...prev, ...processedPhotos];
-        if (combined.length > 50) {
-          setHasExceeded50(true);
+        if (combined.length > 6) {
+          setHasExceededLimit(true);
         }
-        return combined.slice(0, 50);
+        return combined.slice(0, 6);
       });
       setIsProcessing(false);
     }
   };
 
   const removePhoto = (id: string) => {
-    setPhotos(prev => prev.filter(p => p.id !== id));
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const canAnalyze = photos.length >= 9 && photos.length <= 50;
-  const tooFewPhotos = photos.length > 0 && photos.length < 9;
-  const tooManyPhotos = hasExceeded50;
+  const canAnalyze = photos.length >= 1 && photos.length <= 6;
+  const tooManyPhotos = hasExceededLimit;
 
   return (
-    <div className="h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start pt-12 md:pt-20 bg-gray-50 overflow-auto relative">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-gray-100 to-gray-200 opacity-80"></div>
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")",
+          }}
+        ></div>
+      </div>
 
-      {/* Privacy Info Button - Bottom Left */}
+      {/* Privacy Info Button - Fixed Bottom Left */}
       <button
         onClick={() => {
-          setPrivacyPopupSource('help');
+          setPrivacyPopupSource("help");
           setShowPrivacyPopup(true);
         }}
-        className="absolute bottom-6 left-6 p-3 bg-white/10 hover:bg-white/20 rounded-full transition-all hover:scale-110 z-50 border border-white/20"
+        className="fixed bottom-6 left-6 p-3 bg-white/80 hover:bg-white rounded-full transition-all hover:scale-110 z-50 border border-gray-200/60"
         aria-label="Privacy Information"
       >
-        <HelpCircle size={28} className="text-white" strokeWidth={2} />
+        <HelpCircle size={24} className="text-gray-700" strokeWidth={2} />
       </button>
 
       {/* Privacy Popup */}
       <AnimatePresence>
         {showPrivacyPopup && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -148,45 +187,47 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
               onClick={() => setShowPrivacyPopup(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
             />
-
-            {/* Popup */}
             <div className="fixed inset-0 flex items-center justify-center p-4 z-[70] pointer-events-none">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white text-black p-6 md:p-8 rounded-2xl shadow-2xl max-w-md w-full pointer-events-auto"
+                className="bg-[#FCFAF7] text-[#1A1A1A] p-6 md:p-8 shadow-2xl max-w-md w-full pointer-events-auto border-2 border-[#1A1A1A]"
               >
-                <div className="flex flex-col items-center text-center space-y-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <HelpCircle size={24} className="text-green-600" />
+                <div className="flex flex-col items-center text-center space-y-4 font-mono">
+                  <div className="w-12 h-12 bg-gray-200 flex items-center justify-center">
+                    <HelpCircle size={24} className="text-[#1A1A1A]" />
                   </div>
-                  <h3 className="text-2xl font-bold">개인정보 보호</h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    업로드된 개인 정보와 사진들은<br />
-                    <span className="font-bold text-black">어디에도 저장되지 않습니다.</span>
+                  <h3 className="text-xl font-bold uppercase">개인정보 보호</h3>
+                  <p className="text-xs leading-relaxed uppercase opacity-80">
+                    업로드된 개인 정보와 사진들은
+                    <br />
+                    <span className="font-bold">
+                      어디에도 저장되지 않습니다.
+                    </span>
                   </p>
-                  <p className="text-gray-600 leading-relaxed">
-                    모든 분석은 브라우저에서 진행되며,<br />
+                  <p className="text-xs leading-relaxed uppercase opacity-80">
+                    모든 분석은 브라우저에서 진행되며,
+                    <br />
                     페이지를 닫으면 데이터가 완전히 삭제됩니다.
                   </p>
-                  {privacyPopupSource === 'upload' && (
-                    <p className="text-green-600 font-medium leading-relaxed">
-                      분석을 위해 9장 이상의 사진을<br />
+                  {privacyPopupSource === "upload" && (
+                    <p className="text-xs font-medium leading-relaxed uppercase">
+                      분석을 위해 1장 이상의 사진을
+                      <br />
                       선택해주세요.
                     </p>
                   )}
                   <button
                     onClick={() => {
                       setShowPrivacyPopup(false);
-                      // If opened from upload button, trigger file selection
-                      if (privacyPopupSource === 'upload') {
+                      if (privacyPopupSource === "upload") {
                         setTimeout(() => {
                           fileInputRef.current?.click();
                         }, 100);
                       }
                     }}
-                    className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors font-medium"
+                    className="bg-[#1A1A1A] text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium text-sm uppercase"
                   >
                     확인
                   </button>
@@ -197,125 +238,172 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
         )}
       </AnimatePresence>
 
-      <div className="max-w-4xl w-full flex flex-col items-center text-center space-y-8 z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-2 w-full"
-        >
-          {/* Updated Title: Capital M, Light font */}
-          <h2 className="text-3xl md:text-5xl font-semibold tracking-tight whitespace-nowrap">Upload Your Moments</h2>
-        </motion.div>
+      {/* Main Content Area */}
+      <main className="relative z-10 w-full px-4 pb-20">
+        {/* Receipt Wrapper */}
+        <div className="relative w-full max-w-[360px] mx-auto overflow-hidden pb-4 pt-0">
+          <div className="relative w-full max-w-[340px] mx-auto">
+            {/* The Receipt Paper */}
+            <div className="relative bg-[#FCFAF7] text-[#1A1A1A] font-mono px-6 pt-12 pb-16 shadow-lg">
+              {/* Subtle Folds/Wrinkles */}
+              <div
+                className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5"
+                style={{
+                  background:
+                    "linear-gradient(175deg, transparent 40%, #000 40%, transparent 43%), linear-gradient(5deg, transparent 60%, #000 60%, transparent 62%)",
+                }}
+              ></div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="w-full flex justify-center"
-        >
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            <button
-              onClick={() => {
-                setPrivacyPopupSource('upload');
-                setShowPrivacyPopup(true);
-              }}
-              className="group cursor-pointer relative"
-            >
-              <div className="bg-white text-black px-12 py-4 rounded-full text-lg font-semibold shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all flex items-center gap-2">
-                {isProcessing ? (
-                  <span className="animate-pulse">처리중...</span>
-                ) : (
-                  <>
-                    <Upload size={20} />
-                    <span>사진 선택하기</span>
-                  </>
-                )}
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h1 className="text-2xl font-bold tracking-tighter uppercase mb-2">
+                  Upload Photos
+                </h1>
+                <p className="text-xs text-gray-500 uppercase tracking-widest">
+                  Color Palette Generator
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {new Date()
+                    .toLocaleDateString("en-US", {
+                      weekday: "short",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })
+                    .toUpperCase()}
+                </p>
               </div>
-            </button>
-        </motion.div>
 
-        <div className="text-sm text-gray-500 font-mono">
-          {photos.length}/50장 선택됨
-        </div>
+              {/* Divider */}
+              <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
 
-        {/* Warning Messages */}
-        <AnimatePresence>
-          {tooFewPhotos && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-2 rounded-lg text-sm"
-            >
-              분석하기 위해서는 9장 이상 선택해주세요.
-            </motion.div>
-          )}
-          {tooManyPhotos && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="bg-blue-500/10 border border-blue-500/30 text-blue-400 px-4 py-2 rounded-lg text-sm"
-            >
-              선택한 첫 50장까지만 분석에 사용됩니다.
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Preview Grid */}
-        <div className="w-full max-h-[40vh] overflow-y-auto grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 p-4 rounded-xl border border-gray-800 bg-gray-900/50 backdrop-blur-sm scrollbar-hide">
-          <AnimatePresence>
-            {photos.map((photo) => (
-              <motion.div
-                key={photo.id}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0 }}
-                className="relative aspect-square rounded-md overflow-hidden group"
-              >
-                <img src={photo.url} alt="upload" className="w-full h-full object-cover" />
-                <button 
-                  onClick={() => removePhoto(photo.id)}
-                  className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+              {/* Upload Button */}
+              <div className="mb-6">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => {
+                    setPrivacyPopupSource("upload");
+                    setShowPrivacyPopup(true);
+                  }}
+                  className="w-full bg-[#1A1A1A] text-white py-3 hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 text-sm uppercase font-bold"
+                  disabled={isProcessing}
                 >
-                  <X size={12} />
+                  {isProcessing ? (
+                    <span className="animate-pulse">처리중...</span>
+                  ) : (
+                    <>
+                      <Upload size={16} />
+                      <span>사진 선택하기</span>
+                    </>
+                  )}
                 </button>
-              </motion.div>
-            ))}
-            {photos.length === 0 && (
-               <div className="col-span-full h-32 flex items-center justify-center text-gray-700">
-                 No photos selected yet
-               </div>
-            )}
-          </AnimatePresence>
+              </div>
+
+              {/* Photo Counter */}
+              <div className="text-center mb-6">
+                <div className="text-xs text-gray-500 uppercase">
+                  {photos.length}/6장 선택됨
+                </div>
+              </div>
+
+              {/* Warning Messages */}
+              <AnimatePresence>
+                {tooManyPhotos && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="bg-gray-200 border border-[#1A1A1A]/20 text-[#1A1A1A] px-4 py-2 text-center text-xs uppercase mb-6"
+                  >
+                    선택한 첫 6장까지만 분석에 사용됩니다.
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Divider */}
+              {photos.length > 0 && (
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+              )}
+
+              {/* Preview Grid */}
+              {photos.length > 0 && (
+                <div className="mb-6">
+                  <div className="text-xs text-gray-500 uppercase mb-3">
+                    Photos ({photos.length})
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <AnimatePresence>
+                      {photos.map((photo) => (
+                        <motion.div
+                          key={photo.id}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0 }}
+                          className="relative aspect-square bg-gray-100 overflow-hidden group"
+                        >
+                          <img
+                            src={photo.url}
+                            alt="upload"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            onClick={() => removePhoto(photo.id)}
+                            className="absolute top-1 right-1 bg-[#1A1A1A] text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X size={12} />
+                          </button>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+
+              {/* Divider */}
+              {photos.length > 0 && (
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+              )}
+
+              {/* Analyze Button */}
+              <button
+                onClick={() => onAnalyze(photos.slice(0, 6))}
+                disabled={!canAnalyze}
+                className={`w-full py-3 flex items-center justify-center gap-2 text-sm uppercase font-bold transition-all ${
+                  canAnalyze
+                    ? "bg-[#1A1A1A] text-white hover:bg-gray-800"
+                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                }`}
+              >
+                <span>분석하기</span>
+                <ArrowRight size={16} />
+              </button>
+
+              {/* Jagged Bottom Edge */}
+              <div
+                className="absolute bottom-0 left-0 w-full h-3 bg-[#FCFAF7]"
+                style={{
+                  clipPath:
+                    "polygon(0 0, 3% 50%, 6% 0, 9% 50%, 12% 0, 15% 50%, 18% 0, 21% 50%, 24% 0, 27% 50%, 30% 0, 33% 50%, 36% 0, 39% 50%, 42% 0, 45% 50%, 48% 0, 51% 50%, 54% 0, 57% 50%, 60% 0, 63% 50%, 66% 0, 69% 50%, 72% 0, 75% 50%, 78% 0, 81% 50%, 84% 0, 87% 50%, 90% 0, 93% 50%, 96% 0, 99% 50%, 100% 0, 100% 100%, 0 100%)",
+                }}
+              ></div>
+            </div>
+          </div>
         </div>
+      </main>
 
-        <motion.div
-          animate={{
-            opacity: canAnalyze ? 1 : 0.3,
-            y: canAnalyze ? 0 : 10,
-            pointerEvents: canAnalyze ? 'auto' : 'none'
-          }}
-          className="flex flex-col items-center gap-2"
-        >
-          <button
-            onClick={() => onAnalyze(photos.slice(0, 50))}
-            className="flex items-center gap-2 bg-white text-black hover:bg-gray-200 px-8 py-3 rounded-full transition-colors shadow-lg font-bold border-2 border-transparent"
-            disabled={!canAnalyze}
-          >
-            <span>분석하기</span>
-            <ArrowRight size={18} />
-          </button>
-        </motion.div>
-
-      </div>
+      {/* Footer */}
+      <footer className="fixed bottom-4 left-0 w-full text-center z-10 opacity-30 hover:opacity-100 transition-opacity">
+        <p className="text-[10px] uppercase font-mono tracking-widest text-gray-500">
+          Photo Recap 2025 / Color Analysis
+        </p>
+      </footer>
     </div>
   );
 };
