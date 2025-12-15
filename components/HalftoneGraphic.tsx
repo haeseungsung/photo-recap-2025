@@ -12,7 +12,7 @@ const HalftoneGraphic: React.FC<HalftoneGraphicProps> = ({
 
   useEffect(() => {
     // Process cherry.jpg with halftone filter
-    const cherryImagePath = "/imgs /landing-imgs/cherry.jpg";
+    const cherryImagePath = "/cherry.jpg";
 
     // Use grayscale palette (black only) for pure halftone effect
     const grayscalePalette = [{ r: 0, g: 0, b: 0, hex: "#000000" }];
