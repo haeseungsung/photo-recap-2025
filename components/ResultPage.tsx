@@ -306,7 +306,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                     <BarcodeIcon height={80} />
                   </div>
                   <p className="text-[10px] uppercase tracking-[0.2em]">
-                    Save Your Receipt
+                    Share Your Receipt
                   </p>
                 </button>
 
