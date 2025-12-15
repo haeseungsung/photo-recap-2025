@@ -55,7 +55,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPrivacyPopup, setShowPrivacyPopup] = useState(false);
-  const [hasExceeded50, setHasExceeded50] = useState(false);
+  const [hasExceededLimit, setHasExceededLimit] = useState(false);
   const [privacyPopupSource, setPrivacyPopupSource] = useState<
     "help" | "upload"
   >("help");
@@ -134,13 +134,13 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
           };
         } => p !== null
       );
-      // Limit to 50 photos total
+      // Limit to 6 photos total
       setPhotos((prev) => {
         const combined = [...prev, ...processedPhotos];
-        if (combined.length > 50) {
-          setHasExceeded50(true);
+        if (combined.length > 6) {
+          setHasExceededLimit(true);
         }
-        return combined.slice(0, 50);
+        return combined.slice(0, 6);
       });
       setIsProcessing(false);
     }
@@ -150,9 +150,9 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
     setPhotos((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const canAnalyze = photos.length >= 1 && photos.length <= 50;
+  const canAnalyze = photos.length >= 1 && photos.length <= 6;
   const tooFewPhotos = photos.length > 0 && photos.length < 1;
-  const tooManyPhotos = hasExceeded50;
+  const tooManyPhotos = hasExceededLimit;
 
   return (
     <div className="h-[100dvh] bg-black text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -349,7 +349,7 @@ export const UploadPage: React.FC<UploadPageProps> = ({ onAnalyze }) => {
           className="flex flex-col items-center gap-2"
         >
           <button
-            onClick={() => onAnalyze(photos.slice(0, 50))}
+            onClick={() => onAnalyze(photos.slice(0, 6))}
             className="flex items-center gap-2 bg-white text-black hover:bg-gray-200 px-8 py-3 rounded-full transition-colors shadow-lg font-bold border-2 border-transparent"
             disabled={!canAnalyze}
           >

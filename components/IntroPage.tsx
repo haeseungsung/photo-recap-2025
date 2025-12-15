@@ -1,138 +1,173 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import HalftoneGraphic from "./HalftoneGraphic";
 
 interface IntroPageProps {
   onStart: () => void;
 }
 
-const PRESET_COLORS = [
-  { hex: '#FFD700', name: 'Spectra Yellow' },
-  { hex: '#FF6B6B', name: 'Living Coral' },
-  { hex: '#4ECDC4', name: 'Light Turquoise' },
-  { hex: '#45B7D1', name: 'Sky Blue' },
-  { hex: '#96CEB4', name: 'Green Lily' },
-  { hex: '#FFEEAD', name: 'Double Cream' },
-  { hex: '#D4A5A5', name: 'Dusty Cedar' },
-  { hex: '#9B59B6', name: 'Radiant Orchid' },
-  { hex: '#3498DB', name: 'Blueberry' },
-  { hex: '#E67E22', name: 'Autumn Maple' },
-  { hex: '#2ECC71', name: 'Greenery' },
-  { hex: '#F1C40F', name: 'Mimosa' },
-  { hex: '#E74C3C', name: 'Tangerine Tango' },
-  { hex: '#1ABC9C', name: 'Arcadia' },
-  { hex: '#95A5A6', name: 'Ultimate Gray' },
-  { hex: '#FF9F43', name: 'Marigold' },
-  { hex: '#5F27CD', name: 'Ultra Violet' },
-  { hex: '#FF9FF3', name: 'Pink Lavender' }
-];
-
 export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [cards, setCards] = useState<{id: string, x: number, y: number, rot: number, color: typeof PRESET_COLORS[0]}[]>([]);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    // Start printing animation after a tiny delay
+    const printTimer = setTimeout(() => {
+      setIsPrinting(true);
+    }, 100);
 
-    const newCards: {id: string, x: number, y: number, rot: number, color: typeof PRESET_COLORS[0]}[] = [];
-    const cardW = 160; // w-40
-    const cardH = 96;  // h-24
-    const maxOverlap = 0.3; // 30% max overlap
-    
-    // Shuffle colors
-    const shuffledColors = [...PRESET_COLORS].sort(() => Math.random() - 0.5);
+    // Show button after animation completes
+    const buttonTimer = setTimeout(() => {
+      setShowButton(true);
+    }, 2600); // 2500ms animation + 100ms delay
 
-    shuffledColors.forEach((color, index) => {
-      let bestX = Math.random() * (window.innerWidth - cardW);
-      let bestY = Math.random() * (window.innerHeight - cardH);
-      let valid = false;
-
-      // Try 50 times to find a position with minimal overlap
-      for (let i = 0; i < 50; i++) {
-        const x = Math.random() * (window.innerWidth - cardW);
-        const y = Math.random() * (window.innerHeight - cardH);
-        
-        // Check overlap against existing cards
-        let collision = false;
-        for (const p of newCards) {
-          const xOverlap = Math.max(0, Math.min(x + cardW, p.x + cardW) - Math.max(x, p.x));
-          const yOverlap = Math.max(0, Math.min(y + cardH, p.y + cardH) - Math.max(y, p.y));
-          const overlapArea = xOverlap * yOverlap;
-          const cardArea = cardW * cardH;
-
-          if (overlapArea > (cardArea * maxOverlap)) {
-            collision = true;
-            break;
-          }
-        }
-
-        if (!collision) {
-          bestX = x;
-          bestY = y;
-          valid = true;
-          break;
-        }
-      }
-
-      // If we couldn't find a perfect spot, we use the last random generated one (or initial),
-      // effectively allowing some overlap rather than crashing or skipping.
-      
-      newCards.push({
-        id: `card-${index}`,
-        x: bestX,
-        y: bestY,
-        rot: Math.random() * 360,
-        color
-      });
-    });
-
-    setCards(newCards);
+    return () => {
+      clearTimeout(printTimer);
+      clearTimeout(buttonTimer);
+    };
   }, []);
 
   return (
-    <div className="relative w-full h-[100dvh] bg-[#FDFDFD] overflow-hidden flex flex-col items-center justify-center" ref={containerRef}>
+    <div className="min-h-screen w-full flex flex-col items-center justify-start pt-12 md:pt-20 bg-gray-50 overflow-hidden relative">
+      {/* Background Ambience */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {/* Soft shadow vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white via-gray-100 to-gray-200 opacity-80"></div>
+        {/* Subtle noise for wall texture */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")",
+          }}
+        ></div>
+      </div>
 
-      {/* Background Scattered Cards */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        <AnimatePresence>
-          {cards.map((card, i) => (
-            <motion.div
-              key={card.id}
-              className="absolute w-40 h-24 bg-white shadow-lg flex flex-col"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: card.x,
-                y: card.y,
-                rotate: card.rot
-              }}
-              transition={{ duration: 0.5, delay: i * 0.02 }}
+      {/* Main Content Area */}
+      <main className="relative z-10 w-full px-4 pb-20">
+        {/* Receipt Wrapper */}
+        <div className="relative w-full max-w-[360px] mx-auto overflow-hidden pb-4 pt-0">
+          <div className="relative w-full max-w-[340px] mx-auto perspective-1000">
+            {/* Animation Container */}
+            <div
+              className={`transform transition-transform duration-[2500ms] ease-linear will-change-transform ${
+                isPrinting ? "translate-y-0" : "-translate-y-full"
+              }`}
             >
-              <div 
-                className="flex-1 w-full" 
-                style={{ backgroundColor: card.color.hex }}
-              />
-              <div className="h-6 w-full bg-white flex items-center justify-between px-2 text-[10px] font-mono text-gray-500">
-                <span className="font-bold truncate max-w-[85px]">{card.color.name}</span>
-                <span>{card.color.hex}</span>
+              {/* The Receipt Paper */}
+              <div className="relative bg-[#FCFAF7] text-[#1A1A1A] font-mono px-6 pt-12 pb-16 shadow-lg">
+                {/* Subtle Folds/Wrinkles */}
+                <div
+                  className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5"
+                  style={{
+                    background:
+                      "linear-gradient(175deg, transparent 40%, #000 40%, transparent 43%), linear-gradient(5deg, transparent 60%, #000 60%, transparent 62%)",
+                  }}
+                ></div>
+
+                {/* Header */}
+                <div className="text-center mb-8">
+                  <h1 className="text-2xl font-bold tracking-tighter uppercase mb-2">
+                    Photo Recap
+                  </h1>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest">
+                    Color Palette Generator
+                  </p>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {new Date()
+                      .toLocaleDateString("en-US", {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                      .toUpperCase()}
+                    <br />
+                    {new Date().toLocaleTimeString("en-US", {
+                      hour12: false,
+                    })}
+                  </p>
+                </div>
+
+                {/* Halftone Graphic Area */}
+                <div className="mb-8 px-4">
+                  <HalftoneGraphic />
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Description */}
+                <div className="text-center mb-6">
+                  <p className="text-xs leading-relaxed uppercase opacity-80 max-w-[240px] mx-auto">
+                    Upload your photos and extract harmonious color palettes
+                    from your moments
+                  </p>
+                </div>
+
+                {/* Divider */}
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+
+                {/* Features List */}
+                <div className="flex flex-col gap-3 mb-8 text-sm">
+                  <div className="flex justify-between text-xs text-gray-500 uppercase mb-1">
+                    <span>Features</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">→</span>
+                    <span className="text-xs uppercase">
+                      Color Palette Generator
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs">→</span>
+                    <span className="text-xs uppercase">
+                      Halftone Processing
+                    </span>
+                  </div>
+                </div>
+
+                {/* Barcode Button */}
+                <button
+                  onClick={onStart}
+                  disabled={!showButton}
+                  className={`w-full text-center space-y-2 transition-all duration-300 ${
+                    showButton
+                      ? "opacity-100 cursor-pointer hover:scale-105"
+                      : "opacity-90 cursor-default"
+                  }`}
+                >
+                  <div
+                    className="h-10 w-3/4 mx-auto bg-[#1A1A1A]"
+                    style={{
+                      maskImage:
+                        "linear-gradient(90deg, transparent 2%, black 2%, black 4%, transparent 4%, transparent 6%, black 6%, black 10%, transparent 10%, transparent 12%, black 12%, black 18%, transparent 18%, transparent 20%, black 20%, black 22%, transparent 22%, transparent 26%, black 26%, black 30%, transparent 30%, transparent 34%, black 34%, black 36%, transparent 36%, transparent 40%, black 40%, black 45%, transparent 45%, transparent 48%, black 48%, black 55%, transparent 55%, transparent 60%, black 60%, black 65%, transparent 65%, transparent 70%, black 70%, black 80%, transparent 80%, transparent 85%, black 85%, black 90%, transparent 90%, transparent 95%, black 95%)",
+                    }}
+                  ></div>
+                  <p className="text-[10px] uppercase tracking-[0.2em]">
+                    {showButton ? "Tap to Start" : "Ready to Start"}
+                  </p>
+                </button>
+
+                {/* Jagged Bottom Edge */}
+                <div
+                  className="absolute bottom-0 left-0 w-full h-3 bg-[#FCFAF7]"
+                  style={{
+                    clipPath:
+                      "polygon(0 0, 3% 50%, 6% 0, 9% 50%, 12% 0, 15% 50%, 18% 0, 21% 50%, 24% 0, 27% 50%, 30% 0, 33% 50%, 36% 0, 39% 50%, 42% 0, 45% 50%, 48% 0, 51% 50%, 54% 0, 57% 50%, 60% 0, 63% 50%, 66% 0, 69% 50%, 72% 0, 75% 50%, 78% 0, 81% 50%, 84% 0, 87% 50%, 90% 0, 93% 50%, 96% 0, 99% 50%, 100% 0, 100% 100%, 0 100%)",
+                  }}
+                ></div>
               </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+            </div>
+          </div>
+        </div>
+      </main>
 
-      {/* Foreground Content */}
-      <div className="z-10 flex flex-col items-start max-w-4xl w-full px-8 pointer-events-none">
-      </div>
-
-      <div className="z-20 absolute bottom-12 md:bottom-20 pointer-events-auto">
-        <button 
-          onClick={onStart}
-          className="bg-black text-white px-8 py-4 rounded-full text-lg font-semibold hover:scale-105 transition-transform shadow-xl active:scale-95"
-        >
-          나만의 컬러 팔레트 분석하기
-        </button>
-      </div>
+      {/* Footer */}
+      <footer className="fixed bottom-4 left-0 w-full text-center z-10 opacity-30 hover:opacity-100 transition-opacity">
+        <p className="text-[10px] uppercase font-mono tracking-widest text-gray-500">
+          Photo Recap 2025 / Color Analysis
+        </p>
+      </footer>
     </div>
   );
 };

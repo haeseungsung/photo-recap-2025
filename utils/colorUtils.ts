@@ -309,7 +309,20 @@ export const generatePaletteFromColors = (
 
   ranked.sort((a, b) => b.totalScore - a.totalScore);
 
-  return ranked.slice(0, k).map((r) => r.color);
+  let result = ranked.slice(0, k).map((r) => r.color);
+
+  // If we don't have enough colors, add more from the original scored colors
+  if (result.length < k) {
+    const usedHexes = new Set(result.map((c) => c.hex));
+    const remaining = scoredColors
+      .filter((sc) => !usedHexes.has(sc.color.hex))
+      .sort((a, b) => b.score - a.score)
+      .map((sc) => sc.color);
+
+    result = [...result, ...remaining.slice(0, k - result.length)];
+  }
+
+  return result;
 };
 
 /* Palette Filter */
