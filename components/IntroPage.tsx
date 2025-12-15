@@ -58,7 +58,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
               <div className="relative bg-[#FCFAF7] text-[#1A1A1A] font-mono px-6 pt-12 pb-16 shadow-lg">
                 {/* Subtle Folds/Wrinkles */}
                 <div
-                  className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5"
+                  className="absolute inset-0 pointer-events-none mix-blend-multiply opacity-5 z-10"
                   style={{
                     background:
                       "linear-gradient(175deg, transparent 40%, #000 40%, transparent 43%), linear-gradient(5deg, transparent 60%, #000 60%, transparent 62%)",
