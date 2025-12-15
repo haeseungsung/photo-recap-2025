@@ -66,18 +66,18 @@ export const ResultPage: React.FC<ResultPageProps> = ({
       return paletteColors.map(() => Math.round(equalPercentage));
     }
 
-    // Calculate percentages and ensure they sum to 100
+    // Calculate percentages with 2 decimal places
     const percentages = totalCounts.map((count) =>
-      Math.round((count / total) * 100)
+      parseFloat(((count / total) * 100).toFixed(2))
     );
 
-    // Adjust to ensure sum is exactly 100
-    const sum = percentages.reduce((a, b) => a + b, 0);
+    // Adjust to ensure sum is exactly 100.00
+    const sum = parseFloat(percentages.reduce((a, b) => a + b, 0).toFixed(2));
     if (sum !== 100 && percentages.length > 0) {
-      const diff = 100 - sum;
+      const diff = parseFloat((100 - sum).toFixed(2));
       // Find the index with the highest count to adjust
       const maxIndex = totalCounts.indexOf(Math.max(...totalCounts));
-      percentages[maxIndex] += diff;
+      percentages[maxIndex] = parseFloat((percentages[maxIndex] + diff).toFixed(2));
     }
 
     return percentages;
@@ -111,9 +111,14 @@ export const ResultPage: React.FC<ResultPageProps> = ({
     if (captureRef.current) {
       try {
         const canvas = await html2canvas(captureRef.current, {
-          scale: 2,
-          backgroundColor: "#f9fafb",
+          scale: 3, // Higher quality
+          backgroundColor: "#FCFAF7", // Match receipt background
           useCORS: true,
+          allowTaint: true,
+          logging: false,
+          imageTimeout: 0,
+          windowWidth: captureRef.current.scrollWidth,
+          windowHeight: captureRef.current.scrollHeight,
         });
 
         // Convert canvas to blob
@@ -130,7 +135,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
               await navigator.share({
                 files: [file],
                 title: "My 2025 Color Palette",
-                text: "Check out my 2025 color palette! 🎨",
+                text: "Check out my 2025 color palette!",
               });
             } catch (err) {
               // User cancelled or share failed, fallback to download
