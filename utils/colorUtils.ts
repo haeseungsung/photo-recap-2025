@@ -324,7 +324,7 @@ export const generatePaletteFromColors = (
     )[1];
     return {
       color: representativeColor,
-      totalScore: totalScore * (1 + saturation * 15),
+      totalScore: totalScore * (1 + saturation * 5),
     };
   });
 
