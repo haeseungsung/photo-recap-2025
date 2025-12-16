@@ -317,14 +317,17 @@ export const generatePaletteFromColors = (
     );
 
     const representativeColor = getClusterRepresentative(cluster, scoreMap);
-    const saturation = rgbToHsl(
+    const [h, s, l] = rgbToHsl(
       representativeColor.r,
       representativeColor.g,
       representativeColor.b
-    )[1];
+    );
+
+    var totalScoreModified = totalScore * (1 + s * 15);
+    if (l < 0.05 || l > 0.98) totalScoreModified *= 0.2;
     return {
       color: representativeColor,
-      totalScore: totalScore * (1 + saturation * 5),
+      totalScore: totalScoreModified,
     };
   });
 
