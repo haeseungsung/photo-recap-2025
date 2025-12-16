@@ -422,11 +422,18 @@ export const applyPaletteFilter = (
         let keepColor = false;
 
         // Check if pixel matches any palette color
+        // Compare all palette colors, find closest by hue distance, keep if within threshold and above saturation
+        let minDist = Infinity;
+        let best = null;
         for (const p of paletteHSL) {
-          if (hueDistance(hDeg, p.h) < hueThreshold && s > minSaturation) {
-            keepColor = true;
-            break;
+          const dist = hueDistance(hDeg, p.h);
+          if (dist < minDist) {
+            minDist = dist;
+            best = p;
           }
+        }
+        if (best && minDist < hueThreshold && s > minSaturation) {
+          keepColor = true;
         }
 
         const pixelIndex = i / 4;
