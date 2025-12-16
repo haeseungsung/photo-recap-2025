@@ -205,8 +205,7 @@ export const getTopColors = (
             const sc = scoredColors.find((s) => s.color.hex === color.hex);
             const frequency = sc?.score ?? 0;
             // saturation 가중치 적용
-            const saturatedScore = frequency * (1 + s * 15);
-            // 밝기 가중치 적용
+            const saturatedScore = frequency * (1 + s * 5);
             return { color, saturatedScore };
           })
           .sort((a, b) => b.saturatedScore - a.saturatedScore)[0].color;
@@ -323,8 +322,14 @@ export const generatePaletteFromColors = (
       representativeColor.b
     );
 
-    var totalScoreModified = totalScore * (1 + s * 15);
-    if (l < 0.05 || l > 0.98) totalScoreModified *= 0.2;
+    // 2단계에서는 빈도만 사용 (1단계에서 이미 saturation 고려했음)
+    var totalScoreModified = totalScore * (1 + s * 5);
+
+    // pleasing한 색상 범위만 선택 (너무 어둡거나 밝은 색 제외)
+    if (l < 0.15 || l > 0.95) totalScoreModified *= 0.1;
+    // 너무 채도가 낮은 회색조는 여전히 감점
+    if (s < 0.1) totalScoreModified *= 0.3;
+
     return {
       color: representativeColor,
       totalScore: totalScoreModified,
