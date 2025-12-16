@@ -19,7 +19,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
     // Show button after animation completes
     const buttonTimer = setTimeout(() => {
       setShowButton(true);
-    }, 2600); // 2500ms animation + 100ms delay
+    }, 1100); // 2500ms animation + 100ms delay
 
     return () => {
       clearTimeout(printTimer);
@@ -43,15 +43,52 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
         ></div>
       </div>
 
+      <div
+        className=" absolute top-6 left-1/2 -translate-x-1/2
+    h-12 max-w-[380px] w-full
+    bg-gray-300 z-10
+    rounded-lg
+  "
+        style={{
+          boxShadow: `
+      inset 0 2px 3px rgba(255,255,255,0.6),
+      inset 0 -2px 4px rgba(0,0,0,0.15),
+      0 6px 12px rgba(0,0,0,0.25)
+    `,
+        }}
+      />
       {/* Main Content Area */}
       <main className="relative z-10 w-full px-4 pb-20">
         {/* Receipt Wrapper */}
+        <div
+          className="pointer-events-none absolute top-[-5px] h-[10px] z-19
+         max-w-[370px] w-full px-[12px] left-1/2 -translate-x-1/2 overflow-hidden"
+        >
+          <div
+            className="w-full h-full rounded-lg"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.55), rgba(0,0,0,0))",
+            }}
+          />
+        </div>
+
         <div className="relative w-full max-w-[360px] mx-auto overflow-hidden pb-4 pt-0">
           <div className="relative w-full max-w-[340px] mx-auto perspective-1000">
+            {/* 2️⃣ PAPER OCCLUSION SHADOW (종이에 떨어지는 그림자) */}
+            <div className="pointer-events-none absolute top-[-5px] left-0 right-0 h-6 z-20  w-full left-1/2 -translate-x-1/2">
+              <div
+                className="w-full h-full   "
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.18), rgba(0,0,0,0))",
+                }}
+              />
+            </div>
             {/* Animation Container */}
             <div
-              className={`transform transition-transform duration-[2500ms] ease-linear will-change-transform ${
-                isPrinting ? "translate-y-0" : "-translate-y-full"
+              className={`relative transform transition-transform duration-[1000ms] will-change-transform ${
+                isPrinting ? "translate-y-0" : "-translate-y-full z-20"
               }`}
             >
               {/* The Receipt Paper */}
@@ -79,8 +116,23 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 </div>
 
                 {/* Halftone Graphic Area */}
-                <div className="mb-8">
+                <div className="mb-8 relative">
                   <HalftoneGraphic />
+                  {/* Start Button Overlay */}
+                  {showButton && (
+                    <button
+                      onClick={onStart}
+                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                                 bg-white/90 backdrop-blur-sm hover:bg-white
+                                 text-[#1A1A1A] font-bold uppercase tracking-widest
+                                 px-8 py-3 rounded-full shadow-lg
+                                 transition-all duration-300 hover:scale-110 hover:shadow-xl
+                                 border-2 border-[#1A1A1A]
+                                 text-sm z-20"
+                    >
+                      Start
+                    </button>
+                  )}
                 </div>
 
                 {/* Divider */}

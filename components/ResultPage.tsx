@@ -23,6 +23,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
     [photoId: string]: number[];
   }>({});
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const captureRef = React.useRef<HTMLDivElement>(null);
 
   const paletteColors = palette?.colors || [];
@@ -112,14 +113,21 @@ export const ResultPage: React.FC<ResultPageProps> = ({
   const handleShare = async () => {
     if (captureRef.current) {
       try {
+        setIsCapturing(true);
+
+        // Wait for DOM update
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
         const canvas = await html2canvas(captureRef.current, {
-          scale: 3, // Higher quality
+          scale: 2, // Higher quality
           backgroundColor: "#FCFAF7", // Match receipt background
           useCORS: true,
           allowTaint: true,
           logging: false,
           imageTimeout: 0,
         });
+
+        setIsCapturing(false);
 
         // Convert canvas to blob
         canvas.toBlob(async (blob) => {
@@ -150,6 +158,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
         }, "image/png");
       } catch (err) {
         console.error("Capture failed", err);
+        setIsCapturing(false);
       }
     }
   };
@@ -175,11 +184,47 @@ export const ResultPage: React.FC<ResultPageProps> = ({
         ></div>
       </div>
 
+      <div
+        className=" absolute top-6 left-1/2 -translate-x-1/2
+    h-12 max-w-[380px] w-full
+    bg-gray-300 z-10
+    rounded-lg
+  "
+        style={{
+          boxShadow: `
+      inset 0 2px 3px rgba(255,255,255,0.6),
+      inset 0 -2px 4px rgba(0,0,0,0.15),
+      0 6px 12px rgba(0,0,0,0.25)
+    `,
+        }}
+      />
       {/* Main Content Area */}
       <main className="relative z-10 w-full px-4 pb-20">
         {/* Receipt Wrapper */}
+        <div
+          className="pointer-events-none absolute top-[-5px] h-[10px] z-19
+         max-w-[370px] w-full px-[12px] left-1/2 -translate-x-1/2 overflow-hidden"
+        >
+          <div
+            className="w-full h-full rounded-lg"
+            style={{
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.55), rgba(0,0,0,0))",
+            }}
+          />
+        </div>
         <div className="relative w-full max-w-[360px] mx-auto overflow-hidden pb-4 pt-0">
           <div className="relative w-full max-w-[340px] mx-auto perspective-1000">
+            {/* 2️⃣ PAPER OCCLUSION SHADOW (종이에 떨어지는 그림자) */}
+            <div className="pointer-events-none absolute top-[-5px] left-0 right-0 h-6 z-20  w-full left-1/2 -translate-x-1/2">
+              <div
+                className="w-full h-full   "
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.18), rgba(0,0,0,0))",
+                }}
+              />
+            </div>
             {/* Animation Container */}
             <div
               ref={captureRef}
@@ -207,6 +252,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                       Color Receipt
                     </h1>
                     <button
+                      data-html2canvas-ignore="true"
                       onClick={onRetry}
                       className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
                       aria-label="Retry"
@@ -273,20 +319,39 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                     <span>Amount</span>
                   </div>
                   {paletteColors.map((color, index) => (
-                    <div
-                      key={index}
-                      className="flex justify-between items-center group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-4 h-6 rounded-full border-2 border-white ring-1 ring-black/10"
-                          style={{ backgroundColor: color.hex }}
-                        />
-                        <span className="text-xs text-gray-500 font-mono tracking-wider">
-                          {color.hex}
-                        </span>
+                    <div key={index} className="flex group gap-2">
+                      {/* color chip */}
+                      <div
+                        className={`flex items-center h-[16px] ${
+                          isCapturing ? "pt-3" : ""
+                        }`}
+                      >
+                        <div className="w-4 h-[16px] rounded-full bg-gray-300 p-[1px] shrink-0">
+                          <div className="w-full h-full rounded-full bg-white p-[2px]">
+                            <div
+                              className="w-full h-full rounded-full"
+                              style={{ backgroundColor: color.hex }}
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs">{colorPercentages[index]}%</div>
+
+                      {/* text row */}
+                      <div className="h-[16px] flex items-center justify-between flex-1">
+                        <div
+                          className="text-xs text-gray-500 font-mono tracking-wider"
+                          // style={{ transform: "translateY(-1px)" }}
+                        >
+                          {color.hex}
+                        </div>
+
+                        <div
+                          className="text-xs text-gray-500"
+                          // style={{ transform: "translateY(-1px)" }}
+                        >
+                          {colorPercentages[index]}%
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -308,7 +373,10 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                   <div className="w-3/4 mx-auto flex justify-center">
                     <BarcodeIcon height={80} />
                   </div>
-                  <p className="text-[10px] uppercase tracking-[0.2em]">
+                  <p
+                    data-html2canvas-ignore="true"
+                    className="text-[10px] uppercase tracking-[0.2em]"
+                  >
                     Share Your Receipt
                   </p>
                 </button>
