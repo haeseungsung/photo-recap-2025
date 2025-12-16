@@ -323,7 +323,7 @@ export const generatePaletteFromColors = (
     );
 
     // 2단계에서는 빈도만 사용 (1단계에서 이미 saturation 고려했음)
-    var totalScoreModified = totalScore * (1 + s * 5);
+    var totalScoreModified = totalScore;
 
     // pleasing한 색상 범위만 선택 (너무 어둡거나 밝은 색 제외)
     if (l < 0.15 || l > 0.95) totalScoreModified *= 0.1;
