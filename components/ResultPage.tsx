@@ -86,6 +86,16 @@ export const ResultPage: React.FC<ResultPageProps> = ({
     return percentages;
   }, [paletteColors, validPhotos, photoColorCounts]);
 
+  // Sort colors by percentage (highest first)
+  const sortedColorData = useMemo(() => {
+    return paletteColors
+      .map((color, index) => ({
+        color,
+        percentage: colorPercentages[index] || 0,
+      }))
+      .sort((a, b) => b.percentage - a.percentage);
+  }, [paletteColors, colorPercentages]);
+
   // Apply palette filter to photos
   useEffect(() => {
     validPhotos.forEach((photo) => {
@@ -318,7 +328,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                     <span>HEX</span>
                     <span>Amount</span>
                   </div>
-                  {paletteColors.map((color, index) => (
+                  {sortedColorData.map((item, index) => (
                     <div key={index} className="flex group gap-2">
                       {/* color chip */}
                       <div
@@ -330,7 +340,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                           <div className="w-full h-full rounded-full bg-white p-[2px]">
                             <div
                               className="w-full h-full rounded-full"
-                              style={{ backgroundColor: color.hex }}
+                              style={{ backgroundColor: item.color.hex }}
                             />
                           </div>
                         </div>
@@ -342,14 +352,14 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                           className="text-xs text-gray-500 font-mono tracking-wider"
                           // style={{ transform: "translateY(-1px)" }}
                         >
-                          {color.hex}
+                          {item.color.hex}
                         </div>
 
                         <div
                           className="text-xs text-gray-500"
                           // style={{ transform: "translateY(-1px)" }}
                         >
-                          {colorPercentages[index]}%
+                          {item.percentage}%
                         </div>
                       </div>
                     </div>

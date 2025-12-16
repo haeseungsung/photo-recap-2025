@@ -100,11 +100,25 @@ export const getTopColors = (
       }
 
       // Use smaller canvas for performance
-      canvas.width = 100;
-      canvas.height = 100;
-      ctx.drawImage(img, 0, 0, 100, 100);
+      const MAX_SIZE = 300;
+      let width = img.width;
+      let height = img.height;
 
-      const imageData = ctx.getImageData(0, 0, 100, 100).data;
+      // Scale down if too large, maintaining aspect ratio
+      if (width > MAX_SIZE || height > MAX_SIZE) {
+        if (width > height) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        } else {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const imageData = ctx.getImageData(0, 0, width, height).data;
 
       // Histogram approach: Quantize colors and count
       const colorCounts: {
@@ -192,6 +206,7 @@ export const getTopColors = (
             const frequency = sc?.score ?? 0;
             // saturation 가중치 적용
             const saturatedScore = frequency * (1 + s * 15);
+            // 밝기 가중치 적용
             return { color, saturatedScore };
           })
           .sort((a, b) => b.saturatedScore - a.saturatedScore)[0].color;
@@ -301,9 +316,15 @@ export const generatePaletteFromColors = (
       0
     );
 
+    const representativeColor = getClusterRepresentative(cluster, scoreMap);
+    const saturation = rgbToHsl(
+      representativeColor.r,
+      representativeColor.g,
+      representativeColor.b
+    )[1];
     return {
-      color: getClusterRepresentative(cluster, scoreMap),
-      totalScore,
+      color: representativeColor,
+      totalScore: totalScore * (1 + saturation * 15),
     };
   });
 
