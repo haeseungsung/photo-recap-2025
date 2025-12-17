@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { PhotoData, PaletteResult } from "../types";
 import { applyPaletteFilter } from "../utils/colorUtils";
-import { RefreshCw, Share2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import html2canvas from "html2canvas";
 import BarcodeIcon from "./BarcodeIcon";
 import { Footer } from "./Footer";
@@ -153,8 +153,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
             try {
               await navigator.share({
                 files: [file],
-                title: "My 2025 Color Palette",
-                text: "Check out my 2025 color palette!",
+                title: "Photo Receipt",
               });
             } catch (err) {
               // User cancelled or share failed, fallback to download

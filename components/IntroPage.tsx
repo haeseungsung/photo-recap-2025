@@ -119,21 +119,6 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 {/* Halftone Graphic Area */}
                 <div className="mb-6 relative" onClick={onStart}>
                   <HalftoneGraphic />
-                  {/* {/* Start Button Overlay */}
-                  {/* {showButton && (
-                    <button
-                      onClick={onStart}
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                                 bg-white/90 backdrop-blur-sm hover:bg-white
-                                 text-[#1A1A1A] font-bold uppercase tracking-widest
-                                 px-8 py-3 rounded-full shadow-lg
-                                 transition-all duration-300 hover:scale-110 hover:shadow-xl
-                                 border-2 border-[#1A1A1A]
-                                 text-sm z-20"
-                    >
-                      Start
-                    </button>
-                  )} */}
                 </div>
 
                 {/* Divider */}
