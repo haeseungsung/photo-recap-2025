@@ -105,7 +105,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 {/* Header */}
                 <div className="text-center mb-8">
                   <h1 className="text-[28px] font-bold tracking-[0.2rem] font-jersey uppercase mb-2 ">
-                    Color Receipt
+                    Photo Receipt
                   </h1>
                   {/* <p className="text-xs text-gray-500 uppercase tracking-widest">
                     Color Palette Generator
@@ -141,7 +141,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 {/* Description */}
                 <div className="text-center mb-4">
                   <p className="text-xs leading-relaxed uppercase opacity-80 max-w-[240px] mx-auto">
-                    Upload your photos and <br /> get your color receipt
+                    Upload your photos <br /> and get your receipt
                   </p>
                 </div>
 

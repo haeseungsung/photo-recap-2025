@@ -258,7 +258,7 @@ export const ResultPage: React.FC<ResultPageProps> = ({
                   {/* Retry Button - Top Right */}
                   <div className="flex justify-center items-center pb-2 gap-1">
                     <h1 className="text-[28px] font-bold tracking-[0.2rem] font-jersey uppercase ">
-                      Color Receipt
+                      Photo Receipt
                     </h1>
                     <button
                       data-html2canvas-ignore="true"
