@@ -116,10 +116,10 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 </div>
 
                 {/* Halftone Graphic Area */}
-                <div className="mb-6 relative">
+                <div className="mb-6 relative" onClick={onStart}>
                   <HalftoneGraphic />
                   {/* {/* Start Button Overlay */}
-                  {showButton && (
+                  {/* {showButton && (
                     <button
                       onClick={onStart}
                       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
@@ -132,7 +132,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                     >
                       Start
                     </button>
-                  )}
+                  )} */}
                 </div>
 
                 {/* Divider */}
@@ -168,16 +168,26 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 </div> */}
 
                 {/* Barcode Button */}
+
                 <button
                   onClick={onStart}
                   disabled={!showButton}
-                  className={`w-full text-center space-y-2 transition-all duration-300 ${
+                  className={`w-full relative text-center space-y-2 transition-all duration-300 ${
                     showButton
                       ? "opacity-100 cursor-pointer hover:scale-105"
                       : "opacity-90 cursor-default"
                   }`}
                 >
-                  <div className="w-3/4 mx-auto flex justify-center">
+                  <div className="w-3/4 mx-auto flex justify-center relative">
+                    <div
+                      className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                        uppercase tracking-[0.1rem] font-jersey z-20 text-[48px] text-white
+                    ${showButton ? "opacity-100" : "opacity-0"}
+                    transition-opacity duration-300
+                    `}
+                    >
+                      Start
+                    </div>
                     <BarcodeIcon height={60} />
                   </div>
                   <p className="text-[10px] uppercase tracking-[0.2rem]">
