@@ -5,7 +5,7 @@ export const LoadingPage: React.FC = () => {
 
   useEffect(() => {
     // Animate progress from 0% to 100% over 4.5 seconds (matching App.tsx delay)
-    const duration = 4500; // 4.5 seconds
+    const duration = 3000; // 4.5 seconds
     const intervalTime = 50; // Update every 50ms
     const increment = (100 / duration) * intervalTime;
 
@@ -40,11 +40,11 @@ export const LoadingPage: React.FC = () => {
       {/* Center Content */}
       <div className="relative z-10 text-center px-4">
         <div className="font-mono text-[#1A1A1A] mb-8">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
+          <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-2">
             Processing
           </p>
-          <h1 className="text-2xl md:text-3xl uppercase tracking-tight">
-            Analyzing Your Colors
+          <h1 className="text-[24px] font-bold tracking-[0.2rem] font-jersey uppercase ">
+            Printing Your Receipt
           </h1>
         </div>
 
@@ -70,9 +70,29 @@ export const LoadingPage: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <footer className="fixed bottom-4 left-0 w-full text-center z-10 opacity-30">
+      <footer className=" pointer-events-none fixed bottom-4 left-0 w-full text-center z-10 opacity-30  transition-opacity">
         <p className="text-[10px] uppercase font-mono tracking-widest text-gray-500">
-          Photo Recap 2025 / Color Analysis
+          <span className="inline-flex items-center gap-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="inline-block"
+              aria-hidden="true"
+              style={{ verticalAlign: "text-bottom" }}
+            >
+              <rect x="2" y="2" width="20" height="20" rx="5" />
+              <path d="M16.5 7.5h.01" />
+              <circle cx="12" cy="12" r="4" />
+            </svg>
+            surf.on.pixel
+          </span>
         </p>
       </footer>
     </div>

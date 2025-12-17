@@ -44,7 +44,7 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
       </div>
 
       <div
-        className=" absolute top-6 left-1/2 -translate-x-1/2
+        className=" absolute top-6 md:top-[3.3rem] left-1/2 -translate-x-1/2
     h-12 max-w-[380px] w-full
     bg-gray-300 z-10
     rounded-lg
@@ -104,8 +104,8 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
 
                 {/* Header */}
                 <div className="text-center mb-8">
-                  <h1 className="text-2xl font-bold tracking-tighter uppercase mb-2">
-                    2025 Color Receipt
+                  <h1 className="text-[28px] font-bold tracking-[0.2rem] font-jersey uppercase mb-2 ">
+                    Color Receipt
                   </h1>
                   {/* <p className="text-xs text-gray-500 uppercase tracking-widest">
                     Color Palette Generator
@@ -116,9 +116,9 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 </div>
 
                 {/* Halftone Graphic Area */}
-                <div className="mb-8 relative">
+                <div className="mb-6 relative">
                   <HalftoneGraphic />
-                  {/* Start Button Overlay */}
+                  {/* {/* Start Button Overlay */}
                   {showButton && (
                     <button
                       onClick={onStart}
@@ -136,13 +136,12 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                 </div>
 
                 {/* Divider */}
-                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-6"></div>
+                <div className="w-full border-b border-dashed border-[#1A1A1A]/30 mb-4"></div>
 
                 {/* Description */}
-                <div className="text-center mb-6">
+                <div className="text-center mb-4">
                   <p className="text-xs leading-relaxed uppercase opacity-80 max-w-[240px] mx-auto">
-                    Upload your photos and extract color palettes from your
-                    moments
+                    Upload your photos and <br /> get your color receipt
                   </p>
                 </div>
 
@@ -179,10 +178,10 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
                   }`}
                 >
                   <div className="w-3/4 mx-auto flex justify-center">
-                    <BarcodeIcon height={80} />
+                    <BarcodeIcon height={60} />
                   </div>
-                  <p className="text-[10px] uppercase tracking-[0.2em]">
-                    Tab to Start
+                  <p className="text-[10px] uppercase tracking-[0.2rem]">
+                    Thank you
                   </p>
                 </button>
 
@@ -201,9 +200,29 @@ export const IntroPage: React.FC<IntroPageProps> = ({ onStart }) => {
       </main>
 
       {/* Footer */}
-      <footer className="fixed bottom-4 left-0 w-full text-center z-10 opacity-30 hover:opacity-100 transition-opacity">
+      <footer className=" pointer-events-none fixed bottom-4 left-0 w-full text-center z-10 opacity-30  transition-opacity">
         <p className="text-[10px] uppercase font-mono tracking-widest text-gray-500">
-          Photo Recap 2025 / Color Analysis
+          <span className="inline-flex items-center gap-1">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="inline-block"
+              aria-hidden="true"
+              style={{ verticalAlign: "text-bottom" }}
+            >
+              <rect x="2" y="2" width="20" height="20" rx="5" />
+              <path d="M16.5 7.5h.01" />
+              <circle cx="12" cy="12" r="4" />
+            </svg>
+            surf.on.pixel
+          </span>
         </p>
       </footer>
     </div>

@@ -42,7 +42,7 @@ const App: React.FC = () => {
       const [aiResult] = await Promise.all([
         analyzePaletteWithGemini(paletteColors),
         // Wait 4.5 seconds to match progress bar animation
-        new Promise((resolve) => setTimeout(resolve, 4500)),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
       ]);
 
       setResult({
